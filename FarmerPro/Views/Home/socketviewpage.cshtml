@@ -1,0 +1,53 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <script src="~/Scripts/jquery-1.6.4.js"></script>
+    <script src="~/Scripts/jquery.signalR-2.4.3.js"></script>
+    <script src="~/signalr/hubs"></script>
+    <script>
+        $(function () {
+
+            //$.connection.hub.url = "/signalr";
+            console.log($.connection.hub.url);
+
+            var chat = $.connection.chathub;
+            console.log(chat);
+
+            $.connection.hub.start().done(function () {
+                // 連接成功，你可以在這裡進行額外的初始化
+                console.log("BackEnd Server-Side：WebSocket connected");
+            });
+
+            chat.client.broadcastMessage = function (message) {
+                // 處理接收到的訊息
+                console.log(message);
+            };
+
+            chat.client.broadcastMessage = function (message) {
+                // Append the message to the 'inputsWS' div using <p> tags
+                $('#inputsWS').append('<p>' + message + '</p>');
+            };
+
+
+            $("#sendButton").click(function () {
+                var message = $("#messageInput").val();
+                chat.server.send(message);
+                // $('#inputsWS').append('<p>' + message + '</p>');
+                //console.log(message);
+            });
+        });
+    </script>
+    <title></title>
+</head>
+<body>
+    <div>
+    socket view page
+    </div>
+</body>
+</html>

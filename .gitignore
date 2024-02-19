@@ -1,0 +1,8 @@
+.vs/                       
+packages/    
+.cache
+FarmerPro/obj/
+FarmerPro/bin/
+FarmerPro/upload/
+FarmerPro/Web.config
+FarmerPro/Properties/PublishProfiles/
