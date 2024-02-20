@@ -138,7 +138,7 @@ namespace FarmerPro.Controllers
 
             YoutubeLive addboardcast=new YoutubeLive();
             string resultid = addboardcast.CreateYouTubeBroadcast(input.liveName, input.liveName,  ytstarttime,  ytendtime);
-            if (resultid != "error") 
+            if (resultid != "error" && resultid.Length==11) 
             {
                 string youtubeliveurl = @"https://youtube.com/live/" + resultid;
                 var NewLiveSetting = new LiveSetting
@@ -233,13 +233,15 @@ namespace FarmerPro.Controllers
             }
             else
             {
-                var result = new
-                {
-                    statusCode = 402,
-                    status = "error",
-                    message = "加入yotube失敗",
-                };
-                return Content(HttpStatusCode.OK, result);
+                // 要再打開，測試錯誤
+                //var result = new
+                //{
+                //    statusCode = 402,
+                //    status = "error",
+                //    message = "加入yotube失敗",
+                //};
+                //return Content(HttpStatusCode.OK, result);
+                return Content(HttpStatusCode.OK, resultid);
             }
 
 

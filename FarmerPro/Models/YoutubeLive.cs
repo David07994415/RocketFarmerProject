@@ -96,7 +96,7 @@ namespace FarmerPro.Models
             catch (Exception ex)
             {
                 // 異常處理
-                 return "error";
+                 return ex.Message+ex.StackTrace;
             }
         }
 
