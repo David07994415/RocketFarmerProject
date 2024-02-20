@@ -46,8 +46,8 @@ namespace FarmerPro.Controllers
                                 {
                                     orderId = o.Id,
                                     userNickName = db.Users.Where(u => u.Id == o.UserId).Select(u => u.NickName).FirstOrDefault(),
-                                    orderSum = o.OrderSum,
-                                    creatTime = o.CreatTime.ToString("yyyy/MM/dd"),
+                                    orderSum = (int)o.OrderSum,
+                                    creatTime = o.CreatTime,
                                     ispay = o.IsPay,
                                     shipment = o.Shipment
                                 }).ToList();
@@ -74,7 +74,7 @@ namespace FarmerPro.Controllers
                             statusCode = 200,
                             status = "success",
                             message = "取得成功",
-                            data = orderInfo
+                            data = orderInfo.ToList()
                         };
                         return Content(HttpStatusCode.OK, result);
                     }
@@ -210,8 +210,8 @@ namespace FarmerPro.Controllers
                                                 {
                                                     orderId = o.Id,
                                                     userNickName = db.Users.Where(u => u.Id == o.UserId).Select(u => u.NickName).FirstOrDefault(),
-                                                    orderSum = o.OrderSum,
-                                                    creatTime = o.CreatTime.ToString("yyyy/MM/dd"),
+                                                    orderSum = (int)o.OrderSum,
+                                                    creatTime = o.CreatTime,
                                                     ispay = o.IsPay,
                                                     shipment = o.Shipment
                                                 };

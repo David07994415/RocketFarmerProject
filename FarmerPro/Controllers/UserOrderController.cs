@@ -62,8 +62,8 @@ namespace FarmerPro.Controllers
                             {
                                 orderId = order.Id,
                                 farmerNickName,
-                                orderSum = order.OrderSum,
-                                creatTime = order.CreatTime.ToString("yyyy/MM/dd"),
+                                orderSum = (int)order.OrderSum,
+                                creatTime = order.CreatTime,
                                 shipment = order.Shipment
                             }
                                 );
