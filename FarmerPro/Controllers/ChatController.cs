@@ -242,12 +242,12 @@ namespace FarmerPro.Controllers
                                 chatroomId = chatroom.Id,
                                 userId = db.Users.Where(y => y.Id == chatroom.UserIdOwner)?.FirstOrDefault()?.Id,
                                 userNickName = db.Users.Where(y => y.Id == chatroom.UserIdOwner)?.FirstOrDefault()?.NickName == null ?
-                                        db.Users.Where(y => y.Id == chatroom.UserIdOwner)?.FirstOrDefault()?.Account.Substring(0, 2) :
+                                        db.Users.Where(y => y.Id == chatroom.UserIdOwner)?.FirstOrDefault()?.Account?.Substring(0, 2) :
                                         db.Users.Where(y => y.Id == chatroom.UserIdOwner)?.FirstOrDefault()?.NickName,
                                 userPhoto = db.Users.Where(y => y.Id == chatroom.UserIdOwner)?.FirstOrDefault()?.Photo == null ?
                                         null :
                                         db.Users.Where(y => y.Id == chatroom.UserIdOwner)?.FirstOrDefault()?.Photo,
-                                lastMessageDate = db.Records.Where(y => y.ChatRoomId == chatroom.Id)?.OrderByDescending(z => z.CreatTime).FirstOrDefault().CreatTime.ToString("yyyy/MM/dd"),
+                                lastMessageDate = db.Records.Where(y => y.ChatRoomId == chatroom.Id)?.AsEnumerable().LastOrDefault()?.CreatTime.ToString("yyyy/MM/dd"),
                             }).ToList(),
                         };
                         return Content(HttpStatusCode.OK, result);
@@ -277,12 +277,12 @@ namespace FarmerPro.Controllers
                                 chatroomId = chatroom.Id,
                                 farmerId= db.Users.Where(y => y.Id == chatroom.UserIdTalker)?.FirstOrDefault()?.Id,
                                 famrerNickName = db.Users.Where(y => y.Id == chatroom.UserIdTalker)?.FirstOrDefault()?.NickName == null ?
-                                        db.Users.Where(y => y.Id == chatroom.UserIdTalker)?.FirstOrDefault()?.Account.Substring(0, 2) :
+                                        db.Users.Where(y => y.Id == chatroom.UserIdTalker)?.FirstOrDefault()?.Account?.Substring(0, 2) :
                                         db.Users.Where(y => y.Id == chatroom.UserIdTalker)?.FirstOrDefault()?.NickName,
                                 famrerPhoto = db.Users.Where(y => y.Id == chatroom.UserIdTalker)?.FirstOrDefault()?.Photo == null ?
                                         null :
                                         db.Users.Where(y => y.Id == chatroom.UserIdTalker)?.FirstOrDefault()?.Photo,
-                                lastMessageDate = db.Records.Where(y => y.ChatRoomId == chatroom.Id)?.OrderByDescending(z => z.CreatTime).FirstOrDefault().CreatTime.ToString("yyyy/MM/dd"),
+                                lastMessageDate = db.Records.Where(y => y.ChatRoomId == chatroom.Id)?.AsEnumerable().LastOrDefault()?.CreatTime.ToString("yyyy/MM/dd"),
                             }).ToList(),
                         };
                         return Content(HttpStatusCode.OK, result);

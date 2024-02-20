@@ -172,7 +172,7 @@ namespace FarmerPro.Controllers
                             data = new
                             {
                                 liveId = LiveEvent.Id,
-                                yturl = LiveEvent.YTURL,
+                                yturl = LiveEvent.ShareURL,
                                 liveName = LiveEvent.LiveName,
                                 liveFarmerId=db.Users.Where(x => x.Id == LiveEvent.UserId)?.FirstOrDefault()?.Id,
                                 liveFarmer = db.Users.Where(x => x.Id == LiveEvent.UserId)?.FirstOrDefault()?.NickName == null ?
