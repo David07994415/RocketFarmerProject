@@ -40,11 +40,19 @@ namespace FarmerPro.Controllers
                 }
                 else
                 {
-                    //var orders = db.Orders.Where(o => o.UserId == farmerId).ToList();
-                    //var orders = db.Orders.OrderDetail.Select(od => od.Spec.Product.Users.Id == farmerId).ToList();
-                    var orders = db.Orders.Where(o => o.OrderDetail.Any(od => od.Spec.Product.UserId == farmerId)).ToList();
+                    var orderInfo = db.Orders
+                                .Where(o => o.OrderDetail.Any(od => od.Spec.Product.UserId == farmerId))
+                                .Select(o => new
+                                {
+                                    orderId = o.Id,
+                                    userNickName = db.Users.Where(u => u.Id == o.UserId).Select(u => u.NickName).FirstOrDefault(),
+                                    orderSum = o.OrderSum,
+                                    creatTime = o.CreatTime.ToString("yyyy/MM/dd"),
+                                    ispay = o.IsPay,
+                                    shipment = o.Shipment
+                                }).ToList();
 
-                    if (!orders.Any())
+                    if (!orderInfo.Any())
                     {
                         //result訊息
                         var getOrder = new
@@ -58,23 +66,15 @@ namespace FarmerPro.Controllers
                     }
                     else
                     {
-                        var userNickName = (from order in db.Orders
-                                            join u in db.Users on order.UserId equals user.Id
-                                            select user.NickName).FirstOrDefault();
+                        //var userNickName = (from order in db.Orders
+                        //                    join u in db.Users on order.UserId equals user.Id
+                        //                    select user.NickName).FirstOrDefault();
                         var result = new
                         {
                             statusCode = 200,
                             status = "success",
                             message = "取得成功",
-                            data = new
-                            {
-                                orderId = orders.FirstOrDefault().Id,
-                                userNickName,
-                                orderSum = orders.FirstOrDefault().OrderSum,
-                                creatTime = orders.FirstOrDefault().CreatTime,
-                                ispay = orders.FirstOrDefault().IsPay,
-                                shipment = orders.FirstOrDefault().Shipment
-                            }
+                            data = orderInfo
                         };
                         return Content(HttpStatusCode.OK, result);
                     }
@@ -211,7 +211,7 @@ namespace FarmerPro.Controllers
                                                     orderId = o.Id,
                                                     userNickName = db.Users.Where(u => u.Id == o.UserId).Select(u => u.NickName).FirstOrDefault(),
                                                     orderSum = o.OrderSum,
-                                                    creatTime = o.CreatTime,
+                                                    creatTime = o.CreatTime.ToString("yyyy/MM/dd"),
                                                     ispay = o.IsPay,
                                                     shipment = o.Shipment
                                                 };
