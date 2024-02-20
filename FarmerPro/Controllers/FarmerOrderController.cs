@@ -40,14 +40,14 @@ namespace FarmerPro.Controllers
                 }
                 else
                 {
-                    var orderInfo = db.Orders
+                    var orderInfo = db.Orders.AsEnumerable()
                                 .Where(o => o.OrderDetail.Any(od => od.Spec.Product.UserId == farmerId))
                                 .Select(o => new
                                 {
                                     orderId = o.Id,
                                     userNickName = db.Users.Where(u => u.Id == o.UserId).Select(u => u.NickName).FirstOrDefault(),
                                     orderSum = (int)o.OrderSum,
-                                    creatTime = o.CreatTime,
+                                    creatTime = o.CreatTime.ToString("yyyy.MM.dd"),
                                     ispay = o.IsPay,
                                     shipment = o.Shipment
                                 }).ToList();
