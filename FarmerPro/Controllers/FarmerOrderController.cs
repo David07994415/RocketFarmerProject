@@ -42,6 +42,7 @@ namespace FarmerPro.Controllers
                 {
                     var orderInfo = db.Orders.AsEnumerable()
                                 .Where(o => o.OrderDetail.Any(od => od.Spec.Product.UserId == farmerId))
+                                .OrderByDescending(o => o.CreatTime)
                                 .Select(o => new
                                 {
                                     orderId = o.Id,
