@@ -104,6 +104,7 @@ namespace FarmerPro.Controllers
                         data = new
                         {
                             liveId = CurrentLiveEvent.LiveSetting.Id,
+                            liveFarmerId = db.Users.Where(x => x.Id == CurrentLiveEvent.LiveSetting.UserId)?.FirstOrDefault()?.Id,
                             liveProductId = CurrentLiveEvent.LiveSetting.LiveProduct.FirstOrDefault()?.Spec.Product.Id,
                             liveProductName = CurrentLiveEvent.LiveSetting.LiveProduct.FirstOrDefault()?.Spec.Product.ProductTitle,
                             livePrice = CurrentLiveEvent.LiveSetting.LiveProduct.FirstOrDefault()?.Spec.LivePrice,
