@@ -143,23 +143,24 @@ namespace FarmerPro.Controllers
             //        imglList.Add(url);
             //    }
             //}
-            DateTime ytstarttime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.startTime.Hours, input.startTime.Minutes, input.startTime.Seconds);
-            DateTime ytendtime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.endTime.Hours, input.endTime.Minutes, input.endTime.Seconds);
-
-            YoutubeLive addboardcast=new YoutubeLive();
-            string resultid = addboardcast.CreateYouTubeBroadcast(input.liveName, input.liveName,  ytstarttime,  ytendtime);
-            if (resultid != "error" && resultid.Length==11) 
-            {
-                string youtubeliveurl = @"https://youtube.com/live/" + resultid;
+            
+            //youtube 測試功能
+            //DateTime ytstarttime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.startTime.Hours, input.startTime.Minutes, input.startTime.Seconds);
+            //DateTime ytendtime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.endTime.Hours, input.endTime.Minutes, input.endTime.Seconds);
+            //YoutubeLive addboardcast=new YoutubeLive();
+            //string resultid = addboardcast.CreateYouTubeBroadcast(input.liveName, input.liveName,  ytstarttime,  ytendtime);
+            //if (resultid != "error" && resultid.Length==11) 
+            //{
+               // string youtubeliveurl = @"https://youtube.com/live/" + resultid;
                 var NewLiveSetting = new LiveSetting
                 {
                     LiveName = input.liveName,
                     LiveDate = input.liveDate.Date,
                     StartTime = input.startTime,
                     EndTime = input.endTime,
-                    YTURL = youtubeliveurl,
+                    YTURL = input.yturl,     //youtubeliveurl
                     //LivePic= HasPhotoFile? imglList[0]:null,
-                    ShareURL = youtubeliveurl.Substring(youtubeliveurl.LastIndexOf('/') + 1), //這邊可能要改
+                    ShareURL = input.yturl.Substring(input.yturl.LastIndexOf('/') + 1), //youtubeliveurl
                     UserId = FarmerId,
                 };
 
@@ -240,19 +241,18 @@ namespace FarmerPro.Controllers
                     }
                 };
                 return Content(HttpStatusCode.OK, resultReturn);
-            }
-            else
-            {
-                // 要再打開，測試錯誤
-                //var result = new
-                //{
-                //    statusCode = 402,
-                //    status = "error",
-                //    message = "加入yotube失敗",
-                //};
-                //return Content(HttpStatusCode.OK, result);
-                return Content(HttpStatusCode.OK, resultid);
-            }
+            //}
+            //else
+            //{
+            //   var result = new
+            //   {
+            //       statusCode = 402,
+            //       status = "error",
+            //       message = "加入yotube失敗",
+            //   };
+            //    return Content(HttpStatusCode.OK, result);
+            //    //return Content(HttpStatusCode.OK, resultid); // for 測試錯誤
+            //}
 
 
 
@@ -297,20 +297,21 @@ namespace FarmerPro.Controllers
 
 
             var searchLiveSetting = db.LiveSettings.Where(x => x.UserId == FarmerId && x.Id== liveId)?.FirstOrDefault();
-            DateTime ytstarttime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.startTime.Hours, input.startTime.Minutes, input.startTime.Seconds);
-            DateTime ytendtime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.endTime.Hours, input.endTime.Minutes, input.endTime.Seconds);
-
-            YoutubeLive updateboardcast = new YoutubeLive();
-            string resultid = updateboardcast.UpdateYouTubeBroadcast(input.liveName, input.liveName, ytstarttime, ytendtime, searchLiveSetting.ShareURL);
-            if (resultid != "error")
-            {
-                string youtubeliveurl = @"https://youtube.com/live/" + resultid;
+            
+            //測試youtube
+            //DateTime ytstarttime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.startTime.Hours, input.startTime.Minutes, input.startTime.Seconds);
+            //DateTime ytendtime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.endTime.Hours, input.endTime.Minutes, input.endTime.Seconds);
+            //YoutubeLive updateboardcast = new YoutubeLive();
+            //string resultid = updateboardcast.UpdateYouTubeBroadcast(input.liveName, input.liveName, ytstarttime, ytendtime, searchLiveSetting.ShareURL);
+            //if (resultid != "error")
+            //{
+            //    string youtubeliveurl = @"https://youtube.com/live/" + resultid;
                 searchLiveSetting.LiveName = input.liveName;
                 searchLiveSetting.LiveDate = input.liveDate;
                 searchLiveSetting.StartTime = input.startTime;
                 searchLiveSetting.EndTime = input.endTime;
-                searchLiveSetting.YTURL = youtubeliveurl;
-                searchLiveSetting.ShareURL = youtubeliveurl.Substring(youtubeliveurl.LastIndexOf('/') + 1); //這邊可能要改
+                searchLiveSetting.YTURL = input.yturl;  //youtubeliveurl
+            searchLiveSetting.ShareURL = input.yturl.Substring(input.yturl.LastIndexOf('/') + 1); //youtubeliveurl
                 //圖片部分透過另外一支API處理
                 db.SaveChanges();
                 int LiveSettingId = searchLiveSetting.Id;
@@ -422,18 +423,17 @@ namespace FarmerPro.Controllers
                     }
                 };
                 return Content(HttpStatusCode.OK, resultReviser);
-            }
-            else 
-            {
-                var result = new
-                {
-                    statusCode = 402,
-                    status = "error",
-                    message = "更新yotube失敗",
-                };
-                return Content(HttpStatusCode.OK, result);
-
-            }
+            //} //測試youtube
+            //else 
+            //{
+            //    var result = new
+            //    {
+            //        statusCode = 402,
+            //        status = "error",
+            //        message = "更新yotube失敗",
+            //    };
+            //    return Content(HttpStatusCode.OK, result);
+            //}
 
 
 

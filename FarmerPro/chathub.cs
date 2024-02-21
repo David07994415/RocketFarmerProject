@@ -85,7 +85,7 @@ namespace FarmerPro
         public async Task<string> SendMessageToRoom(int chatroomId, int userIdSender, string message)
         {
             try
-            {
+            { 
                 var groupClient = await Clients.Group(chatroomId.ToString()).receiveMessage(await SendMessageToApi(chatroomId, userIdSender, message));
                 //string returnbody=await SendMessageToApi(chatroomId, userIdSender, message); //先關閉
                 if (groupClient == null)
