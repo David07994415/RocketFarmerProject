@@ -1,5 +1,7 @@
 ﻿using FarmerPro.Models;
 using FarmerPro.Securities;
+using MailKit.Search;
+using Org.BouncyCastle.Asn1.X509;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +15,7 @@ namespace FarmerPro.Controllers
     {
         private FarmerProDB db = new FarmerProDB();
 
-        #region BFO-1 取得小農訂單清單
+        #region BFO-4 取得小農各自訂單清單
 
         [HttpGet]
         [Route("api/farmer/orderlistTest")]
@@ -22,24 +24,45 @@ namespace FarmerPro.Controllers
             //int farmerId = Convert.ToInt16(JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter)["Id"]);
 
             //var user = db.Users.FirstOrDefault();
-            var test = db.OrderFarmer.Where(x => x.Id == 1).FirstOrDefault().Order;
 
-            //userId==2 的商品，prom的價格
-            var product = db.OrderFarmer.Where(o => o.UserId == 2).FirstOrDefault().Order.OrderDetail.Select(p => new
+            //小農個人訂單
+            var orderbyfarmer = db.OrderFarmer.Where(of => of.UserId == 2).Select(of => of.Order).ToList();
+
+            //order內specId的spec->productId->userId == OrderFarmer的userId == farmerId
+            var orderbyfarmerInfo = orderbyfarmer.Select(o => new
             {
-                SpecId = p.SpecId
-            }
-            );
+                orderId = o.Id,
+                userId = o.UserId,
+                createTime = o.CreatTime,
+                shipment = o.Shipment
+            }).ToList();
+
+            var orderbyfarmerspec = db.OrderFarmer.Where(of => of.UserId == 2).SelectMany(of => of.Order.OrderDetail)
+                                    .Select(od => new
+                                    {
+                                        farmerUserId = od.Spec.Product.UserId,
+                                        specId = od.SpecId,
+                                        subtotal = od.SubTotal
+                                    })
+                                    .Where(sel => sel.farmerUserId == 2)  // 篩選出farmerId商品
+                                    .ToList();
+
             var result = new
             {
-                statusCode = 401,
-                status = "error",
-                message = "沒有此小農，請重新輸入",
-                data = product
+                statusCode = 200,
+                status = "success",
+                message = "取得成功",
+                data = new
+                {
+                    orderbyfarmerInfo,
+                    orderbyfarmerspec
+                }
             };
             return Content(HttpStatusCode.OK, result);
         }
 
-        #endregion BFO-1 取得小農訂單清單
+        //userId==2 的商品，prom的價格
+
+        #endregion BFO-4 取得小農各自訂單清單
     }
 }
