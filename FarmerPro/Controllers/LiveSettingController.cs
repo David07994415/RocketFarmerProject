@@ -990,42 +990,47 @@ namespace FarmerPro.Controllers
         public async Task<IHttpActionResult> youtubego2()
         {
 
-            
-            var clientSecrets = new ClientSecrets
+            try
             {
-                ClientId = WebConfigurationManager.AppSettings["ytid"].ToString(),
-                ClientSecret = WebConfigurationManager.AppSettings["ytkey"].ToString()
-            };
+                var clientSecrets = new ClientSecrets
+                {
+                    ClientId = WebConfigurationManager.AppSettings["ytid"].ToString(),
+                    ClientSecret = WebConfigurationManager.AppSettings["ytkey"].ToString()
+                };
 
-            // 定義所需的範圍
-            string[] scopes = { "https://www.googleapis.com/auth/youtube" };
+                // 定義所需的範圍
+                string[] scopes = { "https://www.googleapis.com/auth/youtube" };
 
-            // 建立授權資料流
-            var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+                // 建立授權資料流
+                var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+                {
+                    ClientSecrets = clientSecrets
+                });
+                string redirecturi = @"https://sun-live.vercel.app/dashboard/live/livesetting";
+                // 創建 AuthorizationCodeRequestUrl
+                var authorizationUrl = flow.CreateAuthorizationCodeRequest(redirecturi);
+
+                // 設置額外的參數，如範例中的 scope
+                authorizationUrl.Scope = @"https://www.googleapis.com/auth/youtube";
+
+                // 建立授權 URL
+                Uri authUrl = authorizationUrl.Build();
+
+                // 將用戶重定向到授權 URL
+                HttpContext.Current.Response.Redirect(authUrl.ToString());
+
+                var result = new
+                {
+                    statusCode = 200,
+                    status = "成功",
+                    message = "竟然成功了",
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
+            catch (Exception e)
             {
-                ClientSecrets = clientSecrets
-            });
-            string redirecturi = @"https://sun-live.vercel.app/dashboard/live/livesetting";
-            // 創建 AuthorizationCodeRequestUrl
-            var authorizationUrl = flow.CreateAuthorizationCodeRequest(redirecturi);
-
-            // 設置額外的參數，如範例中的 scope
-            authorizationUrl.Scope = @"https://www.googleapis.com/auth/youtube";
-
-            // 建立授權 URL
-            Uri authUrl = authorizationUrl.Build();
-
-            // 將用戶重定向到授權 URL
-            HttpContext.Current.Response.Redirect(authUrl.ToString());
-
-            var result = new
-            {
-                statusCode = 200,
-                status = "成功",
-                message = "竟然成功了",
-            };
-            return Content(HttpStatusCode.OK, result);
-
+                return Content(HttpStatusCode.OK, e.Message);
+            }
 
 
 

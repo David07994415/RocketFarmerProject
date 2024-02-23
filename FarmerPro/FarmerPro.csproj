@@ -276,6 +276,7 @@
     <Compile Include="Models\ChatRoom.cs" />
     <Compile Include="Models\EnumList.cs" />
     <Compile Include="Models\FarmerProDB.cs" />
+    <Compile Include="Models\GlobalVariable.cs" />
     <Compile Include="Models\LiveAlbum.cs" />
     <Compile Include="Models\LiveProduct.cs" />
     <Compile Include="Models\LiveSetting.cs" />

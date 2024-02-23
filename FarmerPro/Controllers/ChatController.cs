@@ -1,5 +1,7 @@
 ﻿using FarmerPro.Models;
 using FarmerPro.Securities;
+using Microsoft.AspNet.SignalR;
+using Microsoft.AspNet.SignalR.Infrastructure;
 using Microsoft.AspNet.SignalR.Messaging;
 using MimeKit;
 using Org.BouncyCastle.Tls;
@@ -174,6 +176,14 @@ namespace FarmerPro.Controllers
         [Route("api/chats/roommessages")]
         public IHttpActionResult chatsendmessage(ChatSendMessageCheck input)
         {
+            //var jwtObject = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            //int senderId = (int)jwtObject["Id"];
+            string categlory = "";
+            if (db.Users.Where(x => x.Id == input.userIdSender).FirstOrDefault().Category == UserCategory.小農) { categlory = "小農"; }
+            else { categlory = "會員"; };
+
+            
+
             var CheckChatRoom = db.ChatRooms.Where(room => room.Id == input.chatroomId)?.FirstOrDefault();
             if (CheckChatRoom == null)
             {
@@ -198,6 +208,29 @@ namespace FarmerPro.Controllers
                 db.Records.Add(newRoomSet);
                 // 執行資料庫儲存變更操作
                 db.SaveChanges();
+
+                ////進行WS的message傳送
+                //var hubsocket = GlobalHost.ConnectionManager.GetHubContext<chathub>();
+                //if (categlory == "小農")
+                //{
+                //    int id = db.ChatRooms.Where(x => x.Id == input.chatroomId).FirstOrDefault().UserIdTalker;
+                //    string connectionId = "";
+                //    if (GlobalVariable._userList.ContainsKey(id.ToString()))
+                //    {
+                //        connectionId = GlobalVariable._userList[id.ToString()];
+                //        hubsocket.Clients.Client(connectionId).SendAsync("Notify", "您有未讀訊息");
+                //    }
+                //}
+                //else //使用者是一般用戶
+                //{
+                //    int id = db.ChatRooms.Where(x => x.Id == input.chatroomId).FirstOrDefault().UserIdOwner;
+                //    string connectionId = "";
+                //    if (GlobalVariable._userList.ContainsKey(id.ToString()))
+                //    {
+                //        connectionId = GlobalVariable._userList[id.ToString()];
+                //        hubsocket.Clients.Client(connectionId).SendAsync("Notify", "您有未讀訊息");
+                //    }
+                //};
 
                 var messageReturn = db.Records.Where(x => x.ChatRoomId == input.chatroomId).AsEnumerable();
 
@@ -324,7 +357,7 @@ namespace FarmerPro.Controllers
         #endregion 
 
 
-        //#region FCW-04 傳送單筆直播聊天資訊
+        //#region FCW-04 傳送單筆直播聊天資訊 
         //[HttpPost]
         //[Route("api/chats/livemessages")]
         //[JwtAuthFilter]
