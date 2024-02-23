@@ -594,12 +594,12 @@ namespace FarmerPro.Controllers
                 }
                 else
                 {
-                    //修改商品
-                    var updatecartitem = new CartItem
-                    {
-                        CartId = cart.Id,
-                        SpecId = input.productSpecId,
-                    };
+                    ////修改商品
+                    //var updatecartitem = new CartItem
+                    //{
+                    //    CartId = cart.Id,
+                    //    SpecId = input.productSpecId,
+                    //};
 
                     //cartItemUpdate.SpecId = SpecId;
                     foreach (var item in cartItemUpdate)
