@@ -29,6 +29,8 @@ namespace FarmerPro.Models
 
         public virtual DbSet<LiveAlbum> LiveAlbum { get; set; }
 
+        public virtual DbSet<OrderFarmer> OrderFarmer { get; set; }
+
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
         }

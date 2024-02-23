@@ -256,6 +256,7 @@
     <Compile Include="Controllers\LoginController.cs" />
     <Compile Include="Controllers\LoginForgetController.cs" />
     <Compile Include="Controllers\OrderController.cs" />
+    <Compile Include="Controllers\OrderTestController.cs" />
     <Compile Include="Controllers\ProductController.cs" />
     <Compile Include="Controllers\UserController.cs" />
     <Compile Include="Controllers\UserInfoController.cs" />
@@ -280,6 +281,7 @@
     <Compile Include="Models\LiveSetting.cs" />
     <Compile Include="Models\Order.cs" />
     <Compile Include="Models\OrderDetail.cs" />
+    <Compile Include="Models\OrderFarmer.cs" />
     <Compile Include="Models\Photo.cs" />
     <Compile Include="Models\Product.cs" />
     <Compile Include="Models\Record.cs" />
