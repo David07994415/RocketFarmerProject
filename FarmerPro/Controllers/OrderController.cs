@@ -1,6 +1,7 @@
 ﻿using FarmerPro.Models;
 using FarmerPro.Models.ViewModel;
 using FarmerPro.Securities;
+using MimeKit;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -70,6 +71,26 @@ namespace FarmerPro.Controllers
 
                     db.OrderDetails.AddRange(newOrderDetail);
                     db.SaveChanges();
+
+                    //寫入OrderFarmer資料庫
+                    var uniqueProductIds = input.cartList.Select(item => item.productId).Distinct().ToList();
+                    List<int> uniqueFarmer = new List<int>();
+                    foreach (var product in uniqueProductIds) 
+                    {
+                        int farmerid = db.Products.Where(x => x.Id == product).FirstOrDefault().UserId;
+                        if (uniqueFarmer.Contains(farmerid) == false) { uniqueFarmer.Add(farmerid); }
+                    }
+                    foreach (var of in uniqueFarmer) 
+                    {
+                        var orderFarmer = new OrderFarmer
+                        {
+                            UserId = of,
+                            OrderId = OrderID,
+                        };
+                        db.OrderFarmer.Add(orderFarmer);
+                        db.SaveChanges();
+                    }
+
 
                     foreach (var cartItem in input.cartList)
                     {

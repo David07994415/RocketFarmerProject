@@ -30,9 +30,10 @@ namespace FarmerPro
         }
         private readonly HttpClient _httpClient;
         //private readonly IConnectionManager _connectionManager;
-        public int counterpeople;
-        private static int _chatroomPeopleCount = 0;
+
+       
         public static Dictionary<string, int> _groupUserCounts = new Dictionary<string, int>();
+        
 
         public chathub()
         {
@@ -154,7 +155,7 @@ namespace FarmerPro
             //    connectionIds.Add(connId.ToString());
             //}
             //int count = connectionIds.Count();
-            _chatroomPeopleCount += 1;
+            
            
             await Clients.Group(liveroomstring.ToString()).receivePeople($"{peoplecount}");
             return $"Return by backend：client join for chatroom-{liveroomstring}";
@@ -258,9 +259,18 @@ namespace FarmerPro
         //        return data;
 
         //    }
-    //}
+        //}
+        public void AddintoSocket(int userId)
+        {
+            string connectionId = Context.ConnectionId;
+            bool hasUser = false;
+            if (GlobalVariable._userList.ContainsKey(userId.ToString())) //如果有使用者ID，把connectionId更新
+            { hasUser = true; GlobalVariable._userList[userId.ToString()] = connectionId; };
+            if (hasUser == false) { GlobalVariable._userList.Add(userId.ToString(), connectionId); } //如果沒有使用者ID，把connectionId加入
+        }
 
-
+        //新增
+        //var hub = GlobalHost.ConnectionManager.GetHubContext<chathub>();
 
 
 
