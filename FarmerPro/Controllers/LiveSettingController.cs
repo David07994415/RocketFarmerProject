@@ -760,10 +760,13 @@ namespace FarmerPro.Controllers
                                             live.LiveProduct.Where(x => x.IsTop == true)?.FirstOrDefault()?.Spec.Product.ProductTitle + "(小)",
                             liveProudct = live.LiveProduct?.Select(x => new
                             {
-                                liveProductId = x.Id,
+                                liveProductId = x.Id, 
                                 liveProductName = db.Specs.Where(y => y.Id == x.SpecId)?.FirstOrDefault().Size == true ?
                                                          db.Specs.Where(y => y.Id == x.SpecId)?.FirstOrDefault().Product.ProductTitle + "(大)" :
                                                          db.Specs.Where(y => y.Id == x.SpecId)?.FirstOrDefault().Product.ProductTitle + "(小)",
+                                liveProductPhoto = db.Albums.Where(y=>y.ProductId ==x.Spec.Product.Id)?.FirstOrDefault()?.Photo?.FirstOrDefault()?.URL,
+                                liveProductPrice = db.Specs.Where(y => y.Id == x.SpecId)?.FirstOrDefault().LivePrice,
+                                liveProductStock = db.Specs.Where(y => y.Id == x.SpecId)?.FirstOrDefault().Stock,
                             }).ToList()
                         })
                     };
@@ -983,11 +986,11 @@ namespace FarmerPro.Controllers
 
         #region BFL-9 youtubeapi路由測試(new方法)
         [HttpGet]
-        [Route("api/yotubego/testnew")]
+        [Route("api/youtubego/testnew")]
         public async Task<IHttpActionResult> youtubego2()
         {
 
-
+            
             var clientSecrets = new ClientSecrets
             {
                 ClientId = WebConfigurationManager.AppSettings["ytid"].ToString(),
@@ -1014,67 +1017,79 @@ namespace FarmerPro.Controllers
 
             // 將用戶重定向到授權 URL
             HttpContext.Current.Response.Redirect(authUrl.ToString());
-            var code = HttpContext.Current.Request.QueryString["code"];
-            // 使用剛剛建立的 flow 來換取憑證
-            var credential = await flow.ExchangeCodeForTokenAsync("user", code, redirecturi, CancellationToken.None);
 
-            // 創建 YouTubeService
-            var youtubeService = new YouTubeService(new BaseClientService.Initializer()
+            var result = new
             {
-                HttpClientInitializer = (Google.Apis.Http.IConfigurableHttpClientInitializer)credential,
-                ApplicationName = "YourApplicationName_TT"
-            });
-
-            string broadcastTitle = "youtubgo";
-            string broadcastDescription = "youtubgo";
-
-
-
-            // 建立廣播物件
-            LiveBroadcast broadcast = new LiveBroadcast();
-            broadcast.Snippet = new LiveBroadcastSnippet();
-            broadcast.Snippet.Title = broadcastTitle;
-            broadcast.Snippet.Description = broadcastDescription;
-            broadcast.Status = new LiveBroadcastStatus();
-            broadcast.Status.PrivacyStatus = "unlisted";
-
-            // 設定廣播時間
-            DateTime startTime = DateTime.Now.AddDays(1);
-            string startTimeString = startTime.ToString("o"); // 将 startTime 转换为 ISO 8601 格式的字符串
-            DateTimeOffset startTimeOffset = DateTimeOffset.ParseExact(startTimeString, "o", CultureInfo.InvariantCulture);
-            broadcast.Snippet.ScheduledStartTimeDateTimeOffset = startTimeOffset;
-
-            //DateTime endTime = end;
-            //string endTimeString = endTime.ToString("o"); // 将 startTime 转换为 ISO 8601 格式的字符串
-            //DateTimeOffset endTimeOffset = DateTimeOffset.ParseExact(endTimeString, "o", CultureInfo.InvariantCulture);
-            //broadcast.Snippet.ScheduledEndTimeDateTimeOffset = endTimeOffset;
+                statusCode = 200,
+                status = "成功",
+                message = "竟然成功了",
+            };
+            return Content(HttpStatusCode.OK, result);
 
 
 
-            // 創建直播
-            LiveBroadcast createdBroadcast = youtubeService.LiveBroadcasts.Insert(broadcast, "snippet,status").Execute();
-            // 獲得直播ID
-            string broadcastId = createdBroadcast.Id;
-            if (broadcastId != null)
-            {
-                var result = new
-                {
-                    statusCode = 401,
-                    status = "error",
-                    message = "欄位輸入格式不正確，請重新輸入",
-                };
-                return Content(HttpStatusCode.OK, broadcastId);
-            }
-            else
-            {
-                var result = new
-                {
-                    statusCode = 401,
-                    status = "error",
-                    message = "欄位輸入格式不正確，請重新輸入",
-                };
-                return Content(HttpStatusCode.OK, "error");
-            }
+
+            //var code = HttpContext.Current.Request.QueryString["code"];
+            //// 使用剛剛建立的 flow 來換取憑證
+            //var credential = await flow.ExchangeCodeForTokenAsync("user", code, redirecturi, CancellationToken.None);
+
+            //// 創建 YouTubeService
+            //var youtubeService = new YouTubeService(new BaseClientService.Initializer()
+            //{
+            //    HttpClientInitializer = (Google.Apis.Http.IConfigurableHttpClientInitializer)credential,
+            //    ApplicationName = "YourApplicationName_TT"
+            //});
+
+            //string broadcastTitle = "youtubgo";
+            //string broadcastDescription = "youtubgo";
+
+
+
+            //// 建立廣播物件
+            //LiveBroadcast broadcast = new LiveBroadcast();
+            //broadcast.Snippet = new LiveBroadcastSnippet();
+            //broadcast.Snippet.Title = broadcastTitle;
+            //broadcast.Snippet.Description = broadcastDescription;
+            //broadcast.Status = new LiveBroadcastStatus();
+            //broadcast.Status.PrivacyStatus = "unlisted";
+
+            //// 設定廣播時間
+            //DateTime startTime = DateTime.Now.AddDays(1);
+            //string startTimeString = startTime.ToString("o"); // 将 startTime 转换为 ISO 8601 格式的字符串
+            //DateTimeOffset startTimeOffset = DateTimeOffset.ParseExact(startTimeString, "o", CultureInfo.InvariantCulture);
+            //broadcast.Snippet.ScheduledStartTimeDateTimeOffset = startTimeOffset;
+
+            ////DateTime endTime = end;
+            ////string endTimeString = endTime.ToString("o"); // 将 startTime 转换为 ISO 8601 格式的字符串
+            ////DateTimeOffset endTimeOffset = DateTimeOffset.ParseExact(endTimeString, "o", CultureInfo.InvariantCulture);
+            ////broadcast.Snippet.ScheduledEndTimeDateTimeOffset = endTimeOffset;
+
+
+
+            //// 創建直播
+            //LiveBroadcast createdBroadcast = youtubeService.LiveBroadcasts.Insert(broadcast, "snippet,status").Execute();
+            //// 獲得直播ID
+            //string broadcastId = createdBroadcast.Id;
+            //if (broadcastId != null)
+            //{
+            //    var result = new
+            //    {
+            //        statusCode = 401,
+            //        status = "error",
+            //        message = "欄位輸入格式不正確，請重新輸入",
+            //    };
+            //    return Content(HttpStatusCode.OK, broadcastId);
+            //}
+            //else
+            //{
+            //    var result = new
+            //    {
+            //        statusCode = 401,
+            //        status = "error",
+            //        message = "欄位輸入格式不正確，請重新輸入",
+            //    };
+            //    return Content(HttpStatusCode.OK, "error");
+            //}
 
         }
         #endregion
