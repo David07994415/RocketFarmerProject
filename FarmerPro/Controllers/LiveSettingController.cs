@@ -1126,7 +1126,7 @@ namespace FarmerPro.Controllers
             {
                 ClientSecrets = clientSecrets
             });
-            string redirecturi = @"https://sun-live.vercel.app/dashboard/live/livesetting";
+            string redirecturi = @"https://sun-live.vercel.app/test";
             // 創建 AuthorizationCodeRequestUrl
             var authorizationUrl = flow.CreateAuthorizationCodeRequest(redirecturi);
 
