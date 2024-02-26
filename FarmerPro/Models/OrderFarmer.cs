@@ -29,5 +29,8 @@ namespace FarmerPro.Models
         [ForeignKey("OrderId")]
         [Display(Name = "使用者表單")]
         public virtual Order Order { get; set; }//virtual=虛擬資料，會跟資料庫的對應資料相對應
+
+        [Display(Name = "小農出貨狀態")]
+        public bool ShipmentFarmer { get; set; } = false;
     }
 }
