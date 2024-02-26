@@ -10,6 +10,13 @@ namespace FarmerPro.Models.ViewModel
 {
     public class CreateNewLiveSetting
     {
+        [Display(Name = "access token")]
+        public string accessToken { get; set; }
+        [Display(Name = "IssueAt")]
+        public string issue { get; set; }
+        [Display(Name = "IssueAt UTC")]
+        public string issueUTC { get; set; }
+
         [Display(Name = "直播Id")]
         public int liveId { get; set; }
 

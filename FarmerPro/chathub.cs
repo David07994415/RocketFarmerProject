@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.WebSockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -200,7 +201,7 @@ namespace FarmerPro
                 };
 
 
-                var groupClient = await Clients.Group(liveroomstring).receiveMessage(postData);
+                var groupClient = await Clients.Group(liveroomstring).receiveLiveMessage(postData);
                 //string returnbody=await SendMessageToApi(chatroomId, userIdSender, message); //先關閉
                 if (groupClient == null)
                 {
@@ -262,11 +263,20 @@ namespace FarmerPro
         //}
         public void AddintoSocket(int userId)
         {
-            string connectionId = Context.ConnectionId;
-            bool hasUser = false;
-            if (GlobalVariable._userList.ContainsKey(userId.ToString())) //如果有使用者ID，把connectionId更新
-            { hasUser = true; GlobalVariable._userList[userId.ToString()] = connectionId; };
-            if (hasUser == false) { GlobalVariable._userList.Add(userId.ToString(), connectionId); } //如果沒有使用者ID，把connectionId加入
+            try
+            {
+                string connectionId = Context.ConnectionId;
+                bool hasUser = false;
+                if (GlobalVariable._userList.ContainsKey(userId.ToString())) //如果有使用者ID，把connectionId更新
+                { hasUser = true; GlobalVariable._userList[userId.ToString()] = connectionId; };
+                if (hasUser == false) { GlobalVariable._userList.Add(userId.ToString(), connectionId); } //如果沒有使用者ID，把connectionId加入
+                
+                //Clients.Client(connectionId).notifyMessage($"加入addintosocket成功，userId為:{GlobalVariable._userList[userId.ToString()]}，socketId為:{connectionId}");
+            }
+            catch (Exception ex)
+            {
+                
+            }
         }
 
         //新增
