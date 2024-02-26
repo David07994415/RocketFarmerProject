@@ -144,24 +144,25 @@ namespace FarmerPro.Controllers
             //        imglList.Add(url);
             //    }
             //}
-            
+
             //youtube 測試功能
-            //DateTime ytstarttime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.startTime.Hours, input.startTime.Minutes, input.startTime.Seconds);
-            //DateTime ytendtime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.endTime.Hours, input.endTime.Minutes, input.endTime.Seconds);
-            //YoutubeLive addboardcast=new YoutubeLive();
-            //string resultid = addboardcast.CreateYouTubeBroadcast(input.liveName, input.liveName,  ytstarttime,  ytendtime);
-            //if (resultid != "error" && resultid.Length==11) 
-            //{
-               // string youtubeliveurl = @"https://youtube.com/live/" + resultid;
-                var NewLiveSetting = new LiveSetting
+            YoutubeLive addboardcast = new YoutubeLive();
+            UserCredential credentialoutput = addboardcast.CreateToken(input.accessToken);
+            DateTime ytstarttime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.startTime.Hours, input.startTime.Minutes, input.startTime.Seconds);
+            DateTime ytendtime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.endTime.Hours, input.endTime.Minutes, input.endTime.Seconds);
+            string resultid = addboardcast.CreateYouTubeBroadcast(credentialoutput, input.liveName, input.liveName, ytstarttime, ytendtime);
+            if (resultid != "error" && resultid.Length==11) 
+            {
+             string youtubeliveurl = @"https://youtube.com/live/" + resultid;
+            var NewLiveSetting = new LiveSetting
                 {
                     LiveName = input.liveName,
                     LiveDate = input.liveDate.Date,
                     StartTime = input.startTime,
                     EndTime = input.endTime,
-                    YTURL = input.yturl,     //youtubeliveurl
+                    YTURL = youtubeliveurl,     //youtubeliveurl   input.yturl
                     //LivePic= HasPhotoFile? imglList[0]:null,
-                    ShareURL = input.yturl.Substring(input.yturl.LastIndexOf('/') + 1), //youtubeliveurl
+                    ShareURL = youtubeliveurl.Substring(youtubeliveurl.LastIndexOf('/') + 1), //youtubeliveurl  input.yturl
                     UserId = FarmerId,
                 };
 
@@ -242,18 +243,18 @@ namespace FarmerPro.Controllers
                     }
                 };
                 return Content(HttpStatusCode.OK, resultReturn);
-            //}
-            //else
-            //{
-            //   var result = new
-            //   {
-            //       statusCode = 402,
-            //       status = "error",
-            //       message = "加入yotube失敗",
-            //   };
-            //    return Content(HttpStatusCode.OK, result);
-            //    //return Content(HttpStatusCode.OK, resultid); // for 測試錯誤
-            //}
+            }
+            else
+            {
+                var result = new
+                {
+                    statusCode = 402,
+                    status = "error",
+                    message = "加入youtube失敗",
+                };
+                return Content(HttpStatusCode.OK, result);
+                //return Content(HttpStatusCode.OK, resultid); // for 測試錯誤
+            }
 
 
 
@@ -889,7 +890,7 @@ namespace FarmerPro.Controllers
 
 
         //以下為大鈞youtubeapi路由測試
-        #region BFL-8 youtubeapi路由測試   
+        #region BFL-8 youtubeapi路由測試  
         [HttpGet]
         [Route("api/yotubego")]
 
@@ -988,7 +989,7 @@ namespace FarmerPro.Controllers
         #region BFL-9 youtubeapi路由測試(new方法)=>目的，傳送google網址
         [HttpGet]
         [Route("api/youtubego/testnew")]
-        public async Task<IHttpActionResult> youtubego2()
+        public IHttpActionResult youtubego2()
         {
 
             //try
@@ -1105,6 +1106,73 @@ namespace FarmerPro.Controllers
         }
         #endregion
 
+        #region BFL-12 取得google帳號授權網址
+        [HttpGet]
+        [Route("api/livesetting/google")]
+        [JwtAuthFilter]
+        public IHttpActionResult getgoogleoauth2link()
+        {
+            try 
+            {
+
+            var clientSecrets = new ClientSecrets
+            {
+                ClientId = WebConfigurationManager.AppSettings["ytid"].ToString(),
+                ClientSecret = WebConfigurationManager.AppSettings["ytkey"].ToString()
+            };
+
+            // 建立授權資料流
+            var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+            {
+                ClientSecrets = clientSecrets
+            });
+            string redirecturi = @"https://sun-live.vercel.app/dashboard/live/livesetting";
+            // 創建 AuthorizationCodeRequestUrl
+            var authorizationUrl = flow.CreateAuthorizationCodeRequest(redirecturi);
+
+            // 設置額外的參數，如範例中的 scope
+            authorizationUrl.Scope = @"https://www.googleapis.com/auth/youtube";
+
+            // 建立授權 URL
+            Uri authUrl = authorizationUrl.Build();
+
+                if (authUrl != null)
+                {
+                    var result = new
+                    {
+                        statusCode = 200,
+                        status = "success",
+                        message = "取得成功",
+                        url = authUrl.ToString(),
+                    };
+                    return Content(HttpStatusCode.OK, result);
+                }
+                else 
+                {
+                    var result = new
+                    {
+                        statusCode = 401,
+                        status = "error",
+                        message = "取得失敗",
+                    };
+                    return Content(HttpStatusCode.OK, result);
+                }
+            
+            }
+            catch 
+            {
+                var result = new
+                {
+                    statusCode = 500,
+                    status = "error",
+                    message = "其他錯誤",
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
+
+        }
+        #endregion
+
 
         #region BFL-10 youtubeapi路由測試(new方法，搭配BFL-9)=>目的，前端傳送網址中的QueryString，進行["code"]確認
         [HttpPost]
@@ -1147,6 +1215,65 @@ namespace FarmerPro.Controllers
         }
         #endregion
 
+        #region BFL-13  驗證Oauth2並回傳Token
+        [HttpPost]
+        [Route("api/livesetting/authcode")]
+        public async Task<IHttpActionResult> codeturntotoken(BFL10 inputs)
+        {
+            try
+            {
+                var clientSecrets = new ClientSecrets
+                {
+                    ClientId = WebConfigurationManager.AppSettings["ytid"].ToString(),
+                    ClientSecret = WebConfigurationManager.AppSettings["ytkey"].ToString()
+                };
+
+                // 建立授權資料流
+                var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+                {
+                    ClientSecrets = clientSecrets
+                });
+
+                string redirecturi = @"https://sun-live.vercel.app/dashboard/live/livesetting"; //這邊可以改
+                string decodedCode = HttpUtility.UrlDecode(inputs.code);
+                var tokenResponse = await flow.ExchangeCodeForTokenAsync("user", decodedCode, redirecturi, CancellationToken.None);
+
+                if (tokenResponse != null)
+                {
+                    var result = new
+                    {
+                        statusCode = 200,
+                        status = "success",
+                        message = "取得成功",
+                        token = tokenResponse.AccessToken.ToString(),
+                    };
+                    return Content(HttpStatusCode.OK, result);
+                }
+                else
+                {
+                    var result = new
+                    {
+                        statusCode = 401,
+                        status = "error",
+                        message = "取得失敗",
+                    };
+                    return Content(HttpStatusCode.OK, result);
+                }
+            }
+            catch
+            {
+                var result = new
+                {
+                    statusCode = 500,
+                    status = "error",
+                    message = "其他錯誤",
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
+        }
+        #endregion
+
+
 
         #region BFL-11 新增後台直播資訊(新增產品直播價)
         [HttpPost]
@@ -1165,19 +1292,15 @@ namespace FarmerPro.Controllers
                 };
                 return Content(HttpStatusCode.OK, result);
             }
-            YoutubeLive addboardcast = new YoutubeLive();
-            UserCredential credentialoutput = addboardcast.CreateToken(input.accessToken);
-
-
 
             //youtube 測試功能
+            YoutubeLive addboardcast = new YoutubeLive();
+            UserCredential credentialoutput = addboardcast.CreateToken(input.accessToken);
             DateTime ytstarttime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.startTime.Hours, input.startTime.Minutes, input.startTime.Seconds);
             DateTime ytendtime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.endTime.Hours, input.endTime.Minutes, input.endTime.Seconds);
-
             string resultid = addboardcast.CreateYouTubeBroadcast(credentialoutput, input.liveName, input.liveName, ytstarttime, ytendtime);
 
-            //YoutubeLive addboardcast = new YoutubeLive();
-            //string resultid = addboardcast.CreateYouTubeBroadcast(input.liveName, input.liveName, ytstarttime, ytendtime);
+
             if (resultid != "error" && resultid.Length == 11)
             {
                 string youtubeliveurl = @"https://youtube.com/live/" + resultid;
@@ -1278,7 +1401,7 @@ namespace FarmerPro.Controllers
                 {
                     statusCode = 402,
                     status = "error",
-                    message = "加入yotube失敗",
+                    message = "加入youtube失敗",
                 };
                 return Content(HttpStatusCode.OK, result);
                 //return Content(HttpStatusCode.OK, resultid); // for 測試錯誤
