@@ -153,18 +153,18 @@ namespace FarmerPro.Controllers
             string resultid = addboardcast.CreateYouTubeBroadcast(credentialoutput, input.liveName, input.liveName, ytstarttime, ytendtime);
             if (resultid != "error" && resultid.Length==11) 
             {
-             string youtubeliveurl = @"https://youtube.com/live/" + resultid;
-            var NewLiveSetting = new LiveSetting
+                string youtubeliveurl = @"https://youtube.com/live/" + resultid;
+                var NewLiveSetting = new LiveSetting
                 {
                     LiveName = input.liveName,
-                    LiveDate = input.liveDate.Date,
-                    StartTime = input.startTime,
-                    EndTime = input.endTime,
-                    YTURL = youtubeliveurl,     //youtubeliveurl   input.yturl
-                    //LivePic= HasPhotoFile? imglList[0]:null,
-                    ShareURL = youtubeliveurl.Substring(youtubeliveurl.LastIndexOf('/') + 1), //youtubeliveurl  input.yturl
-                    UserId = FarmerId,
-                };
+                        LiveDate = input.liveDate.Date,
+                        StartTime = input.startTime,
+                        EndTime = input.endTime,
+                        YTURL = youtubeliveurl,     //youtubeliveurl   input.yturl
+                        //LivePic= HasPhotoFile? imglList[0]:null,
+                        ShareURL = youtubeliveurl.Substring(youtubeliveurl.LastIndexOf('/') + 1), //youtubeliveurl  input.yturl
+                        UserId = FarmerId,
+                 };
 
                 db.LiveSettings.Add(NewLiveSetting);
                 db.SaveChanges();
@@ -250,7 +250,7 @@ namespace FarmerPro.Controllers
                 {
                     statusCode = 402,
                     status = "error",
-                    message = "加入youtube失敗",
+                    message = "加入youtube失敗，請確認youtube帳號已開啟Live功能",
                 };
                 return Content(HttpStatusCode.OK, result);
                 //return Content(HttpStatusCode.OK, resultid); // for 測試錯誤
@@ -1126,7 +1126,7 @@ namespace FarmerPro.Controllers
             {
                 ClientSecrets = clientSecrets
             });
-            string redirecturi = @"https://sun-live.vercel.app/test";
+            string redirecturi = @"https://sun-live.vercel.app/dashboard/live/verify";
             // 創建 AuthorizationCodeRequestUrl
             var authorizationUrl = flow.CreateAuthorizationCodeRequest(redirecturi);
 
@@ -1234,7 +1234,7 @@ namespace FarmerPro.Controllers
                     ClientSecrets = clientSecrets
                 });
 
-                string redirecturi = @"https://sun-live.vercel.app/dashboard/live/livesetting"; //這邊可以改
+                string redirecturi = @"https://sun-live.vercel.app/dashboard/live/verify"; //這邊可以改
                 string decodedCode = HttpUtility.UrlDecode(inputs.code);
                 var tokenResponse = await flow.ExchangeCodeForTokenAsync("user", decodedCode, redirecturi, CancellationToken.None);
 
