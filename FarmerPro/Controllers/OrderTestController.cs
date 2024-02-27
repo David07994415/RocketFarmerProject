@@ -1,8 +1,10 @@
 ﻿using FarmerPro.Models;
 using FarmerPro.Securities;
 using MailKit.Search;
+using Microsoft.AspNet.SignalR;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Asn1.X9;
+using Owin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,8 +45,9 @@ namespace FarmerPro.Controllers
                 {
                     //order內specId的spec->productId->userId == OrderFarmer的userId == farmerId
                     // 小農個人訂單+出貨狀態
-                    var orderbyfarmerInfo = db.OrderFarmer.AsEnumerable().Where(of => of.UserId == farmerId).Select(of => new
+                    var orderInfo = db.OrderFarmer.AsEnumerable().Where(of => of.UserId == farmerId).Select(of => new
                     {
+                        orderFarmerId = of.Id,
                         orderId = of.Order.Id,
                         userId = of.UserId,
                         createTime = of.Order.CreatTime.ToString("yyyy.MM.dd"),
@@ -53,7 +56,7 @@ namespace FarmerPro.Controllers
                     })
                     .ToList();
 
-                    //var orderbyfarmerspec = db.OrderFarmer.Where(of => of.UserId == 2).SelectMany(of => of.Order.OrderDetail)
+                    //var orderbyfarmerInfo = db.OrderFarmer.Where(of => of.UserId == 2).SelectMany(of => of.Order.OrderDetail)
                     //                        .Select(od => new
                     //                        {
                     //                            orderId = od.OrderId,
@@ -64,7 +67,7 @@ namespace FarmerPro.Controllers
                     //                        .Where(sel => sel.farmerUserId == 2)  // 篩選出farmerId商品
                     //                        .ToList();
 
-                    var orderbyfarmerspec = db.OrderFarmer.Where(of => of.UserId == farmerId).SelectMany(of => of.Order.OrderDetail).Where(od => od.Spec.Product.UserId == farmerId)
+                    var orderbyfarmerInfo = db.OrderFarmer.Where(of => of.UserId == farmerId).SelectMany(of => of.Order.OrderDetail).Where(od => od.Spec.Product.UserId == farmerId)
                                             .GroupBy(od => od.OrderId)  // 按 orderId 進行分組
                                             .Select(group => new
                                             {
@@ -72,11 +75,12 @@ namespace FarmerPro.Controllers
                                                 subtotal = group.Sum(item => item.SubTotal),
                                             }).ToList();
 
-                    var orderbyfarmerall = (from info in orderbyfarmerInfo
-                                            join spec in orderbyfarmerspec on info.orderId equals spec.orderId into orders
+                    var orderbyfarmerall = (from info in orderInfo
+                                            join spec in orderbyfarmerInfo on info.orderId equals spec.orderId into orders
                                             from os in orders.DefaultIfEmpty()
                                             select new
                                             {
+                                                orderFarmerId = info.orderFarmerId,
                                                 orderId = info.orderId,
                                                 userId = info.userId,
                                                 orderSum = (int)os.subtotal,
@@ -134,7 +138,7 @@ namespace FarmerPro.Controllers
         [HttpPatch]
         [Route("api/farmer/order/{orderId}/toggleNew")]
         [JwtAuthFilter]
-        public IHttpActionResult PatchFarmerOrder(int orderId)
+        public IHttpActionResult PatchFarmerOrder(int orderFarmerId)
         {
             try
             {
@@ -153,7 +157,7 @@ namespace FarmerPro.Controllers
                 }
                 else
                 {
-                    var order = db.Orders.FirstOrDefault(o => o.Id == orderId && o.OrderDetail.Any(od => od.Spec.Product.UserId == farmerId) && o.IsPay == true);//要支付後才能改
+                    var order = db.Orders.FirstOrDefault(o => o.OrderDetail.Any(od => od.Spec.Product.UserId == farmerId) && o.IsPay == true);//要支付後才能改
 
                     if (order == null)
                     {
@@ -168,8 +172,35 @@ namespace FarmerPro.Controllers
                     }
                     else
                     {
-                        order.Shipment = !order.Shipment;
-                        db.SaveChanges();
+                        //查詢orderbyfarmer
+                        var orderbyfarmer = db.OrderFarmer.FirstOrDefault(o => o.Id == orderFarmerId);
+                        if (orderbyfarmer != null)
+                        {
+                            orderbyfarmer.ShipmentFarmer = !orderbyfarmer.ShipmentFarmer;
+                            db.SaveChanges();
+                        }
+                        //要同時判斷orderId底下的ShipmentFarmer都按下出貨，order的shipment才能顯示出貨
+                        //在order.orderfarmer.ShipmentFarmer做判斷，只要有其中一個是false就不會將order.Shipment==true
+                        var allShipment = db.OrderFarmer.Where(o => o.OrderId == orderbyfarmer.OrderId).All(of => of.ShipmentFarmer);
+                        if (allShipment)
+                        {
+                            var orderShipment = db.Orders.FirstOrDefault(o => o.Id == orderbyfarmer.OrderId);
+                            if (orderShipment != null)
+                            {
+                                orderShipment.Shipment = true;
+                                db.SaveChanges();
+                            }
+
+                            //進行WS的message傳送
+                            var hubsocket = GlobalHost.ConnectionManager.GetHubContext<chathub>();
+                            int id = db.Orders.Where(x => x.Id == orderbyfarmer.OrderId).FirstOrDefault().UserId;
+                            string connectionId = "";
+                            if (GlobalVariable._userList.ContainsKey(id.ToString()))
+                            {
+                                connectionId = GlobalVariable._userList[id.ToString()];
+                                hubsocket.Clients.Client(connectionId).notifyShipment("您的商品已出貨");
+                            }
+                        }
 
                         var result = new
                         {

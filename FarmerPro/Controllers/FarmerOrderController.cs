@@ -1,6 +1,7 @@
 ﻿using FarmerPro.Models;
 using FarmerPro.Securities;
 using MailKit.Search;
+using Microsoft.AspNet.SignalR;
 using Org.BouncyCastle.Asn1.X509;
 using System;
 using System.Collections.Generic;
@@ -136,6 +137,16 @@ namespace FarmerPro.Controllers
                     {
                         order.Shipment = !order.Shipment;
                         db.SaveChanges();
+
+                        //進行WS的message傳送
+                        var hubsocket = GlobalHost.ConnectionManager.GetHubContext<chathub>();
+                        int id = db.Orders.Where(x => x.Id == orderId).FirstOrDefault().UserId;
+                        string connectionId = "";
+                        if (GlobalVariable._userList.ContainsKey(id.ToString()))
+                        {
+                            connectionId = GlobalVariable._userList[id.ToString()];
+                            hubsocket.Clients.Client(connectionId).notifyShipment("您的商品已出貨");
+                        }
 
                         var result = new
                         {
