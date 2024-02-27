@@ -23,7 +23,6 @@ namespace FarmerPro.Models
     public class YoutubeLive
     {
 
-
         public static YouTubeService GetYouTubeService()
         {
 
@@ -189,7 +188,7 @@ namespace FarmerPro.Models
                 else { return "error"; }
 
             }
-            catch (Exception ex)
+            catch
             {
                 // 異常處理
                 return "error";

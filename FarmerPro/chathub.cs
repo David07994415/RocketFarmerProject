@@ -273,7 +273,7 @@ namespace FarmerPro
                 
                 //Clients.Client(connectionId).notifyMessage($"加入addintosocket成功，userId為:{GlobalVariable._userList[userId.ToString()]}，socketId為:{connectionId}");
             }
-            catch (Exception ex)
+            catch
             {
                 
             }
