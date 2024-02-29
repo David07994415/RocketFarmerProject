@@ -1,4 +1,6 @@
 ﻿using Google.Apis.Auth.OAuth2;
+using Google.Apis.Auth.OAuth2.Flows;
+using Google.Apis.Auth.OAuth2.Responses;
 using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
 using Google.Apis.YouTube.v3.Data;
@@ -20,7 +22,6 @@ namespace FarmerPro.Models
 {
     public class YoutubeLive
     {
-
 
         public static YouTubeService GetYouTubeService()
         {
@@ -48,17 +49,29 @@ namespace FarmerPro.Models
             return youtubeService;
         }
 
-        public string CreateYouTubeBroadcast(string title,string des,DateTime start,DateTime end)
+        public string CreateYouTubeBroadcast(UserCredential credential, string title,string des,DateTime start,DateTime end)
         {
             try
             {
+
+
+                //tokenResponse.Scope= 從這裡開始
+                // 創建 YouTubeService
+                var youtubeService = new YouTubeService(new BaseClientService.Initializer()
+                {
+                    HttpClientInitializer = credential,
+                    ApplicationName = "YourApplicationName_TT"
+                });
+
+
+
 
                 string broadcastTitle = title;
                 string broadcastDescription = des;
 
                
                 //使用OAuth2
-                YouTubeService youtubeService = GetYouTubeService();
+                //YouTubeService youtubeService = GetYouTubeService();
 
 
                 // 建立廣播物件
@@ -96,8 +109,38 @@ namespace FarmerPro.Models
             catch (Exception ex)
             {
                 // 異常處理
-                 return "error";
+                 return ex.Message+ex.StackTrace;
             }
+        }
+
+        public UserCredential CreateToken(string tokeninput) 
+        {
+            TokenResponse token = new TokenResponse();
+            token.AccessToken = tokeninput;
+            token.Scope = @"https://www.googleapis.com/auth/youtube";
+            token.ExpiresInSeconds = 3584;
+            token.Issued = DateTime.Now;
+            token.IssuedUtc = DateTime.UtcNow;
+
+
+            var clientSecrets = new ClientSecrets
+            {
+                ClientId = WebConfigurationManager.AppSettings["ytid"].ToString(),
+                ClientSecret = WebConfigurationManager.AppSettings["ytkey"].ToString()
+            };
+
+
+            // 建立授權資料流
+            var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+            {
+                ClientSecrets = clientSecrets
+            });
+
+            // 将 TokenResponse 转换为 UserCredential
+            var credential = new UserCredential(flow, "user", token);
+
+            return credential;
+
         }
 
         public string UpdateYouTubeBroadcast(string title, string des, DateTime start, DateTime end,string broadcastIdd)
@@ -145,7 +188,7 @@ namespace FarmerPro.Models
                 else { return "error"; }
 
             }
-            catch (Exception ex)
+            catch
             {
                 // 異常處理
                 return "error";

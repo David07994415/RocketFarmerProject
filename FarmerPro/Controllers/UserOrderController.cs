@@ -37,10 +37,19 @@ namespace FarmerPro.Controllers
                 }
                 else
                 {
-                    var orders = db.Orders.Where(o => o.UserId == CustomerId && o.IsPay == true).ToList();
-                    var orderlist = new List<object>();
+                    var orderInfo = db.Orders.AsEnumerable()
+                                .Where(o => o.UserId == CustomerId && o.IsPay == true)
+                                .OrderByDescending(o => o.CreatTime)
+                                .Select(o => new
+                                {
+                                    orderId = o.Id,
+                                    farmerNickName = o.OrderDetail.Select(od => od.Spec.Product.Users.NickName).FirstOrDefault(),
+                                    orderSum = (int)o.OrderSum,
+                                    creatTime = o.CreatTime.ToString("yyyy.MM.dd"),
+                                    shipment = o.Shipment
+                                }).ToList();
 
-                    if (!orders.Any())
+                    if (!orderInfo.Any())
                     {
                         //result訊息
                         var getOrder = new
@@ -53,30 +62,16 @@ namespace FarmerPro.Controllers
                         return Content(HttpStatusCode.OK, getOrder);
                     }
                     else
-
-                        foreach (var order in orders)
-                        {
-                            var farmerNickName = order.OrderDetail.Select(od => od.Spec.Product.Users.NickName).FirstOrDefault();
-
-                            orderlist.Add(new
-                            {
-                                orderId = order.Id,
-                                farmerNickName,
-                                orderSum = order.OrderSum,
-                                creatTime = order.CreatTime,
-                                shipment = order.Shipment
-                            }
-                                );
-                        }
-
-                    var result = new
                     {
-                        statusCode = 200,
-                        status = "success",
-                        message = "取得成功",
-                        data = orderlist
-                    };
-                    return Content(HttpStatusCode.OK, result);
+                        var result = new
+                        {
+                            statusCode = 200,
+                            status = "success",
+                            message = "取得成功",
+                            data = orderInfo.ToList()
+                        };
+                        return Content(HttpStatusCode.OK, result);
+                    }
                 }
             }
             catch

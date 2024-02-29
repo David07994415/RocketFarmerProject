@@ -1,11 +1,19 @@
-﻿using Microsoft.AspNet.SignalR;
+﻿using FarmerPro.Models;
+using Jose;
+using Microsoft.AspNet.SignalR;
+using Microsoft.AspNet.SignalR.Infrastructure;
+using Microsoft.AspNet.SignalR.Messaging;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.WebSockets;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Configuration;
@@ -22,11 +30,17 @@ namespace FarmerPro
             return "Hello, This message from BACKEND Server!";
         }
         private readonly HttpClient _httpClient;
+        //private readonly IConnectionManager _connectionManager;
+
+       
+        public static Dictionary<string, int> _groupUserCounts = new Dictionary<string, int>();
+        
 
         public chathub()
         {
             _httpClient = new HttpClient();   //要調整成domain
             _httpClient.BaseAddress = new Uri(WebConfigurationManager.AppSettings["Serverurl"].ToString());
+            //_connectionManager = GlobalHost.ConnectionManager;
         }
 
         public async Task<object> SendMessageToApi(int chatroomId, int userIdSender, string message)
@@ -77,15 +91,21 @@ namespace FarmerPro
 
         public async Task<string> JoinChatRoom(int chatroomId)
         {
+
             // 將連接客戶加入指定的聊天室
             await Groups.Add(Context.ConnectionId, chatroomId.ToString());
+            //var connection = await Clients.Group(chatroomId.ToString());
+            //var connectionIds = new List<string>(connection);
+            //int count = connectionIds.Count();
+            //await Clients.Group(chatroomId.ToString()).receivePeople($"backend message，people in room are:{count}");
             return $"Return by backend：client join for chatroom-{chatroomId}";
+
         }
 
         public async Task<string> SendMessageToRoom(int chatroomId, int userIdSender, string message)
         {
             try
-            {
+            { 
                 var groupClient = await Clients.Group(chatroomId.ToString()).receiveMessage(await SendMessageToApi(chatroomId, userIdSender, message));
                 //string returnbody=await SendMessageToApi(chatroomId, userIdSender, message); //先關閉
                 if (groupClient == null)
@@ -110,7 +130,61 @@ namespace FarmerPro
         public async Task<string> JoinLiveRoom(string liveroomstring)
         {
             // 將連接客戶加入指定的聊天室
-            await Groups.Add(Context.ConnectionId, liveroomstring);
+            await  Groups.Add(Context.ConnectionId, liveroomstring);
+            bool GroupinDictory = false; //計算人數
+            if (_groupUserCounts.ContainsKey(liveroomstring)) 
+            { GroupinDictory = true; }
+            if(GroupinDictory==false)
+            {
+                _groupUserCounts.Add(liveroomstring, 0);
+            }
+            _groupUserCounts[liveroomstring] += 1;
+            int peoplecount = _groupUserCounts[liveroomstring];
+
+            //var connections = _connectionManager.GetHubContext<chathub>().Clients.Group(liveroomstring);
+            //int count = 0;
+
+            //foreach (var connection in connections)
+            //{
+            //    count++;
+            //}
+
+            //var connection = await Clients.Group(liveroomstring.ToString());
+            //var connectionIds = new List<string>();
+            //foreach (var connId in connection)
+            //{
+            //    connectionIds.Add(connId.ToString());
+            //}
+            //int count = connectionIds.Count();
+            
+           
+            await Clients.Group(liveroomstring.ToString()).receivePeople($"{peoplecount}");
+            return $"Return by backend：client join for chatroom-{liveroomstring}";
+        }
+
+        public async Task<string> LeftLiveRoom(string liveroomstring)
+        {
+            // 將連接客戶加入指定的聊天室
+            await Groups.Remove(Context.ConnectionId, liveroomstring);
+            _groupUserCounts[liveroomstring] -= 1; //計算人數
+            int peoplecount = _groupUserCounts[liveroomstring];
+            //var connections = _connectionManager.GetHubContext<chathub>().Clients.Group(liveroomstring);
+            //int count = 0;
+
+            //foreach (var connection in connections)
+            //{
+            //    count++;
+            //}
+
+            //var connection = await Clients.Group(liveroomstring.ToString());
+            //var connectionIds = new List<string>();
+            //foreach (var connId in connection)
+            //{
+            //    connectionIds.Add(connId.ToString());
+            //}
+            //int count = connectionIds.Count();
+
+            await Clients.Group(liveroomstring.ToString()).receivePeople($"{peoplecount}");
             return $"Return by backend：client join for chatroom-{liveroomstring}";
         }
 
@@ -127,7 +201,7 @@ namespace FarmerPro
                 };
 
 
-                var groupClient = await Clients.Group(liveroomstring).receiveMessage(postData);
+                var groupClient = await Clients.Group(liveroomstring).receiveLiveMessage(postData);
                 //string returnbody=await SendMessageToApi(chatroomId, userIdSender, message); //先關閉
                 if (groupClient == null)
                 {
@@ -186,9 +260,27 @@ namespace FarmerPro
         //        return data;
 
         //    }
-    //}
+        //}
+        public void AddintoSocket(int userId)
+        {
+            try
+            {
+                string connectionId = Context.ConnectionId;
+                bool hasUser = false;
+                if (GlobalVariable._userList.ContainsKey(userId.ToString())) //如果有使用者ID，把connectionId更新
+                { hasUser = true; GlobalVariable._userList[userId.ToString()] = connectionId; };
+                if (hasUser == false) { GlobalVariable._userList.Add(userId.ToString(), connectionId); } //如果沒有使用者ID，把connectionId加入
+                
+                //Clients.Client(connectionId).notifyMessage($"加入addintosocket成功，userId為:{GlobalVariable._userList[userId.ToString()]}，socketId為:{connectionId}");
+            }
+            catch
+            {
+                
+            }
+        }
 
-
+        //新增
+        //var hub = GlobalHost.ConnectionManager.GetHubContext<chathub>();
 
 
 

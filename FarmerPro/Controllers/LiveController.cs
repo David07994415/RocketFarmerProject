@@ -104,6 +104,7 @@ namespace FarmerPro.Controllers
                         data = new
                         {
                             liveId = CurrentLiveEvent.LiveSetting.Id,
+                            liveFarmerId = db.Users.Where(x => x.Id == CurrentLiveEvent.LiveSetting.UserId)?.FirstOrDefault()?.Id,
                             liveProductId = CurrentLiveEvent.LiveSetting.LiveProduct.FirstOrDefault()?.Spec.Product.Id,
                             liveProductName = CurrentLiveEvent.LiveSetting.LiveProduct.FirstOrDefault()?.Spec.Product.ProductTitle,
                             livePrice = CurrentLiveEvent.LiveSetting.LiveProduct.FirstOrDefault()?.Spec.LivePrice,
@@ -172,14 +173,14 @@ namespace FarmerPro.Controllers
                             data = new
                             {
                                 liveId = LiveEvent.Id,
-                                yturl = LiveEvent.YTURL,
+                                yturl = LiveEvent.ShareURL,
                                 liveName = LiveEvent.LiveName,
                                 liveFarmerId=db.Users.Where(x => x.Id == LiveEvent.UserId)?.FirstOrDefault()?.Id,
                                 liveFarmer = db.Users.Where(x => x.Id == LiveEvent.UserId)?.FirstOrDefault()?.NickName == null ?
                                                        db.Users.Where(x => x.Id == LiveEvent.UserId)?.FirstOrDefault()?.Account.ToString().Substring(0, 2) + "小農"
                                                        : db.Users.Where(x => x.Id == LiveEvent.UserId)?.FirstOrDefault()?.NickName,
                                 liveFarmerPic = db.Users.Where(x => x.Id == LiveEvent.UserId)?.FirstOrDefault()?.Photo,
-                                liveDate = LiveEvent.LiveDate.Date.ToString("yyyy.MM.dd") + " " + SwitchDayofWeek(LiveEvent.LiveDate.DayOfWeek),
+                                liveDate = LiveEvent.LiveDate.Date.ToString("yyyy.MM.dd") + " " + SwitchDayofWeek(LiveEvent.LiveDate.DayOfWeek)+ " " + LiveEvent.StartTime.ToString().Substring(0, 5),
                                 liveDescription = db.Users.Where(x => x.Id == LiveEvent.UserId)?.FirstOrDefault()?.Description,
                                 topProductId = LiveEvent.LiveProduct.Where(x => x.IsTop == true)?.FirstOrDefault()?.Spec.ProductId,
                                 topProductName = db.Products.Where(x => x.Id == topproductspecId)?.FirstOrDefault()?.ProductTitle,

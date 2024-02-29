@@ -1,5 +1,7 @@
 ﻿using FarmerPro.Models;
 using FarmerPro.Securities;
+using Microsoft.AspNet.SignalR;
+using Microsoft.AspNet.SignalR.Infrastructure;
 using Microsoft.AspNet.SignalR.Messaging;
 using MimeKit;
 using Org.BouncyCastle.Tls;
@@ -9,6 +11,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace FarmerPro.Controllers
@@ -84,9 +87,18 @@ namespace FarmerPro.Controllers
                        
                         sendDate = x.CreatTime.Date.ToString("MM/dd"),
                         sendTime = x.CreatTime.ToString("HH:mm"),
-                        //readStatus=x.IsRead,
+                        //isRead=x.IsRead,
                     }).ToList()
                 };
+
+                //將小農傳送給使用者的訊息變成已讀狀態
+                var ChageMessageRead = db.Records.Where(x => x.ChatRoomId == roomId && x.UserIdSender== receiverId).AsEnumerable();
+                foreach (var item in ChageMessageRead) 
+                {
+                    item.IsRead = true;
+                }
+                db.SaveChanges();
+
                 return Content(HttpStatusCode.OK, result);
             }
             else //使用者為小農  senderId=>小農，receiverId=>一般使用者
@@ -138,6 +150,16 @@ namespace FarmerPro.Controllers
                         //readStatus=x.IsRead,
                     }).ToList()
                 };
+                //將使用者傳送給小農的訊息變成已讀狀態
+                var ChageMessageRead = db.Records.Where(x => x.ChatRoomId == roomId && x.UserIdSender == receiverId).AsEnumerable();
+                foreach (var item in ChageMessageRead)
+                {
+                    item.IsRead = true;
+                }
+                db.SaveChanges();
+
+
+
                 return Content(HttpStatusCode.OK, result);
 
 
@@ -153,8 +175,16 @@ namespace FarmerPro.Controllers
         #region FCW-02 傳送並存取聊天資訊
         [HttpPost]
         [Route("api/chats/roommessages")]
-        public IHttpActionResult chatsendmessage(ChatSendMessageCheck input)
+        public async Task<IHttpActionResult> chatsendmessage(ChatSendMessageCheck input)
         {
+            //var jwtObject = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            //int senderId = (int)jwtObject["Id"];
+            string categlory = "";
+            if (db.Users.Where(x => x.Id == input.userIdSender).FirstOrDefault().Category == UserCategory.小農) { categlory = "小農"; }
+            else { categlory = "會員"; };
+
+            
+
             var CheckChatRoom = db.ChatRooms.Where(room => room.Id == input.chatroomId)?.FirstOrDefault();
             if (CheckChatRoom == null)
             {
@@ -180,6 +210,34 @@ namespace FarmerPro.Controllers
                 // 執行資料庫儲存變更操作
                 db.SaveChanges();
 
+                ////進行WS的message傳送
+                var hubsocket = GlobalHost.ConnectionManager.GetHubContext<chathub>();
+                //await hubsocket.Clients.All.receiveMessage(hubsocket);
+                if (categlory == "小農")
+                {
+                    int id = db.ChatRooms.Where(x => x.Id == input.chatroomId).FirstOrDefault().UserIdOwner;
+                    string connectionId = "";
+                    if (GlobalVariable._userList.ContainsKey(id.ToString()))
+                    {
+                        connectionId = GlobalVariable._userList[id.ToString()];
+                        //hubsocket.Clients.Client(connectionId).SendAsync("notifyMessage", "您有未讀訊息");
+                        await hubsocket.Clients.Client(connectionId).notifyMessage("您有未讀訊息");
+                        //await hubsocket.Clients.Client(connectionId).notifyMessage($"userId為:{GlobalVariable._userList[id.ToString()]}，socketId為:{connectionId}");
+                    }
+                }
+                else //使用者是一般用戶
+                {
+                    int id = db.ChatRooms.Where(x => x.Id == input.chatroomId).FirstOrDefault().UserIdTalker;
+                    string connectionId = "";
+                    if (GlobalVariable._userList.ContainsKey(id.ToString()))
+                    {
+                        connectionId = GlobalVariable._userList[id.ToString()];
+                        //hubsocket.Clients.Client(connectionId).SendAsync("notifyMessage", "您有未讀訊息");
+                        await hubsocket.Clients.Client(connectionId).notifyMessage("您有未讀訊息");
+                       // await hubsocket.Clients.Client(connectionId).notifyMessage($"userId為:{GlobalVariable._userList[id.ToString()]}，socketId為:{connectionId}");
+                    }
+                };
+
                 var messageReturn = db.Records.Where(x => x.ChatRoomId == input.chatroomId).AsEnumerable();
 
                 var result = new
@@ -197,7 +255,7 @@ namespace FarmerPro.Controllers
                         message = x.Message,
                         sendDate = x.CreatTime.Date.ToString("MM/dd"),
                         sendTime = x.CreatTime.ToString("HH:mm"),
-                        //readStatus=x.IsRead,
+                        isRead=x.IsRead,
                     }).ToList()
                 };
                 return Content(HttpStatusCode.OK, result);
@@ -242,12 +300,13 @@ namespace FarmerPro.Controllers
                                 chatroomId = chatroom.Id,
                                 userId = db.Users.Where(y => y.Id == chatroom.UserIdOwner)?.FirstOrDefault()?.Id,
                                 userNickName = db.Users.Where(y => y.Id == chatroom.UserIdOwner)?.FirstOrDefault()?.NickName == null ?
-                                        db.Users.Where(y => y.Id == chatroom.UserIdOwner)?.FirstOrDefault()?.Account.Substring(0, 2) :
+                                        db.Users.Where(y => y.Id == chatroom.UserIdOwner)?.FirstOrDefault()?.Account?.Substring(0, 2) :
                                         db.Users.Where(y => y.Id == chatroom.UserIdOwner)?.FirstOrDefault()?.NickName,
                                 userPhoto = db.Users.Where(y => y.Id == chatroom.UserIdOwner)?.FirstOrDefault()?.Photo == null ?
                                         null :
                                         db.Users.Where(y => y.Id == chatroom.UserIdOwner)?.FirstOrDefault()?.Photo,
-                                lastMessageDate = db.Records.Where(y => y.ChatRoomId == chatroom.Id)?.OrderByDescending(z => z.CreatTime).FirstOrDefault().CreatTime.ToString("yyyy/MM/dd"),
+                                lastMessageDate = db.Records.Where(y => y.ChatRoomId == chatroom.Id)?.AsEnumerable().LastOrDefault()?.CreatTime.ToString("yyyy/MM/dd"),
+                                isRead= db.Records.Where(y => y.ChatRoomId == chatroom.Id &&y.UserIdSender!= userId && y.IsRead == false)?.FirstOrDefault() == null ? true : false,
                             }).ToList(),
                         };
                         return Content(HttpStatusCode.OK, result);
@@ -277,12 +336,13 @@ namespace FarmerPro.Controllers
                                 chatroomId = chatroom.Id,
                                 farmerId= db.Users.Where(y => y.Id == chatroom.UserIdTalker)?.FirstOrDefault()?.Id,
                                 famrerNickName = db.Users.Where(y => y.Id == chatroom.UserIdTalker)?.FirstOrDefault()?.NickName == null ?
-                                        db.Users.Where(y => y.Id == chatroom.UserIdTalker)?.FirstOrDefault()?.Account.Substring(0, 2) :
+                                        db.Users.Where(y => y.Id == chatroom.UserIdTalker)?.FirstOrDefault()?.Account?.Substring(0, 2) :
                                         db.Users.Where(y => y.Id == chatroom.UserIdTalker)?.FirstOrDefault()?.NickName,
                                 famrerPhoto = db.Users.Where(y => y.Id == chatroom.UserIdTalker)?.FirstOrDefault()?.Photo == null ?
                                         null :
                                         db.Users.Where(y => y.Id == chatroom.UserIdTalker)?.FirstOrDefault()?.Photo,
-                                lastMessageDate = db.Records.Where(y => y.ChatRoomId == chatroom.Id)?.OrderByDescending(z => z.CreatTime).FirstOrDefault().CreatTime.ToString("yyyy/MM/dd"),
+                                lastMessageDate = db.Records.Where(y => y.ChatRoomId == chatroom.Id)?.AsEnumerable().LastOrDefault()?.CreatTime.ToString("yyyy/MM/dd"),
+                                isRead = db.Records.Where(y => y.ChatRoomId == chatroom.Id && y.UserIdSender != userId && y.IsRead == false)?.FirstOrDefault() == null ? true : false
                             }).ToList(),
                         };
                         return Content(HttpStatusCode.OK, result);
@@ -303,7 +363,7 @@ namespace FarmerPro.Controllers
         #endregion 
 
 
-        //#region FCW-04 傳送單筆直播聊天資訊
+        //#region FCW-04 傳送單筆直播聊天資訊 
         //[HttpPost]
         //[Route("api/chats/livemessages")]
         //[JwtAuthFilter]
@@ -385,6 +445,139 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
 
+        }
+        #endregion
+
+
+
+        #region FCW-07 取得單一使用者未讀訊息通知
+        [HttpGet]
+        [Route("api/chats/roomlist/notify")]
+        [JwtAuthFilter]
+        public IHttpActionResult getchatlistnotify()
+        {
+            var jwtObject = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
+            int userId = (int)jwtObject["Id"];
+            var usercheck = db.Users.Where(x => x.Id == userId)?.FirstOrDefault();
+            if (usercheck == null)
+            {
+                var result = new
+                {
+                    statusCode = 401,
+                    status = "error",
+                    message = "使用者不存在",
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
+            else
+            {
+                if (usercheck.Category == UserCategory.小農) //使用者為小農
+                {
+                    var checklist = db.ChatRooms.Where(x => x.UserIdTalker == userId)?.ToList();
+                    if (checklist != null)
+                    {
+                        bool HaveUnReadMessage = false;
+                        foreach (var chats in checklist) 
+                        {
+                            if (chats.Record != null)
+                            {
+                                foreach (var talks in chats.Record)
+                                if (talks.UserIdSender != userId && talks.IsRead == false)
+                                {
+                                    HaveUnReadMessage = true;
+                                    break;
+                                }
+                            }
+                            if (HaveUnReadMessage == true) { break; }
+                        }
+                        if (HaveUnReadMessage == false)  //該小農沒有未讀訊息
+                        {
+                            var result = new
+                            {
+                                statusCode = 200,
+                                status = "success",
+                                message = "取得成功",
+                                haveUnreadMessage=false,
+                            };
+                            return Content(HttpStatusCode.OK, result);
+                        }
+                        else     //該小農具有未讀訊息
+                        {
+                            var result = new
+                            {
+                                statusCode = 200,
+                                status = "success",
+                                message = "取得成功",
+                                haveUnreadMessage = true,
+                            };
+                            return Content(HttpStatusCode.OK, result);
+                        }
+                    }
+                    else
+                    {
+                        var result = new
+                        {
+                            statusCode = 402,
+                            status = "error",
+                            message = "聊天室不存在",
+                        };
+                        return Content(HttpStatusCode.OK, result);
+                    }
+                }
+                else //使用者為客戶
+                {
+                    var checklist = db.ChatRooms.Where(x => x.UserIdOwner == userId)?.AsEnumerable();
+                    if (checklist != null)
+                    {
+                        bool HaveUnReadMessage = false;
+                        foreach (var chats in checklist)
+                        {
+                            if (chats.Record != null) 
+                            {
+                                foreach (var talks in chats.Record)
+                                    if (talks.UserIdSender != userId && talks.IsRead == false)
+                                    {
+                                        HaveUnReadMessage = true;
+                                        break;
+                                    }
+                            }
+                            if (HaveUnReadMessage == true) { break; }
+                        }
+                        if (HaveUnReadMessage == false)  //該使用者沒有未讀訊息
+                        {
+                            var result = new
+                            {
+                                statusCode = 200,
+                                status = "success",
+                                message = "取得成功",
+                                haveUnreadMessage = false,
+                            };
+                            return Content(HttpStatusCode.OK, result);
+                        }
+                        else     //該使用者具有未讀訊息
+                        {
+                            var result = new
+                            {
+                                statusCode = 200,
+                                status = "success",
+                                message = "取得成功",
+                                haveUnreadMessage = true,
+                            };
+                            return Content(HttpStatusCode.OK, result);
+                        }
+                    }
+                    else
+                    {
+                        var result = new
+                        {
+                            statusCode = 402,
+                            status = "error",
+                            message = "聊天室不存在",
+                        };
+                        return Content(HttpStatusCode.OK, result);
+                    }
+                }
+            }
         }
         #endregion 
 

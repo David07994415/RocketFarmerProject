@@ -1,6 +1,7 @@
 ﻿using FarmerPro.Models;
 using FarmerPro.Securities;
 using MailKit.Search;
+using Microsoft.AspNet.SignalR;
 using Org.BouncyCastle.Asn1.X509;
 using System;
 using System.Collections.Generic;
@@ -40,11 +41,20 @@ namespace FarmerPro.Controllers
                 }
                 else
                 {
-                    //var orders = db.Orders.Where(o => o.UserId == farmerId).ToList();
-                    //var orders = db.Orders.OrderDetail.Select(od => od.Spec.Product.Users.Id == farmerId).ToList();
-                    var orders = db.Orders.Where(o => o.OrderDetail.Any(od => od.Spec.Product.UserId == farmerId)).ToList();
+                    var orderInfo = db.Orders.AsEnumerable()
+                                .Where(o => o.OrderDetail.Any(od => od.Spec.Product.UserId == farmerId))
+                                .OrderByDescending(o => o.CreatTime)
+                                .Select(o => new
+                                {
+                                    orderId = o.Id,
+                                    userNickName = db.Users.Where(u => u.Id == o.UserId).Select(u => u.NickName).FirstOrDefault(),
+                                    orderSum = (int)o.OrderSum,
+                                    creatTime = o.CreatTime.ToString("yyyy.MM.dd"),
+                                    ispay = o.IsPay,
+                                    shipment = o.Shipment
+                                }).ToList();
 
-                    if (!orders.Any())
+                    if (!orderInfo.Any())
                     {
                         //result訊息
                         var getOrder = new
@@ -58,23 +68,15 @@ namespace FarmerPro.Controllers
                     }
                     else
                     {
-                        var userNickName = (from order in db.Orders
-                                            join u in db.Users on order.UserId equals user.Id
-                                            select user.NickName).FirstOrDefault();
+                        //var userNickName = (from order in db.Orders
+                        //                    join u in db.Users on order.UserId equals user.Id
+                        //                    select user.NickName).FirstOrDefault();
                         var result = new
                         {
                             statusCode = 200,
                             status = "success",
                             message = "取得成功",
-                            data = new
-                            {
-                                orderId = orders.FirstOrDefault().Id,
-                                userNickName,
-                                orderSum = orders.FirstOrDefault().OrderSum,
-                                creatTime = orders.FirstOrDefault().CreatTime,
-                                ispay = orders.FirstOrDefault().IsPay,
-                                shipment = orders.FirstOrDefault().Shipment
-                            }
+                            data = orderInfo.ToList()
                         };
                         return Content(HttpStatusCode.OK, result);
                     }
@@ -135,6 +137,16 @@ namespace FarmerPro.Controllers
                     {
                         order.Shipment = !order.Shipment;
                         db.SaveChanges();
+
+                        //進行WS的message傳送
+                        var hubsocket = GlobalHost.ConnectionManager.GetHubContext<chathub>();
+                        int id = db.Orders.Where(x => x.Id == orderId).FirstOrDefault().UserId;
+                        string connectionId = "";
+                        if (GlobalVariable._userList.ContainsKey(id.ToString()))
+                        {
+                            connectionId = GlobalVariable._userList[id.ToString()];
+                            hubsocket.Clients.Client(connectionId).notifyShipment("您的商品已出貨");
+                        }
 
                         var result = new
                         {
@@ -210,7 +222,7 @@ namespace FarmerPro.Controllers
                                                 {
                                                     orderId = o.Id,
                                                     userNickName = db.Users.Where(u => u.Id == o.UserId).Select(u => u.NickName).FirstOrDefault(),
-                                                    orderSum = o.OrderSum,
+                                                    orderSum = (int)o.OrderSum,
                                                     creatTime = o.CreatTime,
                                                     ispay = o.IsPay,
                                                     shipment = o.Shipment

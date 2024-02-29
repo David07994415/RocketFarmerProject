@@ -20,6 +20,17 @@ using SixLabors.ImageSharp.Processing;
 using System.Data.Entity.Validation;
 using System.Web.Hosting;
 using System.Security.Cryptography;
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Services;
+using Google.Apis.YouTube.v3;
+using Google.Apis.YouTube.v3.Data;
+using System.Globalization;
+using Google.Apis.Util.Store;
+using Google.Apis.Auth.OAuth2.Flows;
+using Google.Apis.Auth.OAuth2.Requests;
+using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
+using System.Threading;
+using Google.Apis.Auth.OAuth2.Responses;
 
 namespace FarmerPro.Controllers
 {
@@ -133,25 +144,27 @@ namespace FarmerPro.Controllers
             //        imglList.Add(url);
             //    }
             //}
+
+            //youtube 測試功能
+            YoutubeLive addboardcast = new YoutubeLive();
+            UserCredential credentialoutput = addboardcast.CreateToken(input.accessToken);
             DateTime ytstarttime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.startTime.Hours, input.startTime.Minutes, input.startTime.Seconds);
             DateTime ytendtime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.endTime.Hours, input.endTime.Minutes, input.endTime.Seconds);
-
-            YoutubeLive addboardcast=new YoutubeLive();
-            string resultid = addboardcast.CreateYouTubeBroadcast(input.liveName, input.liveName,  ytstarttime,  ytendtime);
-            if (resultid != "error") 
+            string resultid = addboardcast.CreateYouTubeBroadcast(credentialoutput, input.liveName, input.liveName, ytstarttime, ytendtime);
+            if (resultid != "error" && resultid.Length==11) 
             {
                 string youtubeliveurl = @"https://youtube.com/live/" + resultid;
                 var NewLiveSetting = new LiveSetting
                 {
                     LiveName = input.liveName,
-                    LiveDate = input.liveDate.Date,
-                    StartTime = input.startTime,
-                    EndTime = input.endTime,
-                    YTURL = youtubeliveurl,
-                    //LivePic= HasPhotoFile? imglList[0]:null,
-                    ShareURL = youtubeliveurl.Substring(youtubeliveurl.LastIndexOf('/') + 1), //這邊可能要改
-                    UserId = FarmerId,
-                };
+                        LiveDate = input.liveDate.Date,
+                        StartTime = input.startTime,
+                        EndTime = input.endTime,
+                        YTURL = youtubeliveurl,     //youtubeliveurl   input.yturl
+                        //LivePic= HasPhotoFile? imglList[0]:null,
+                        ShareURL = youtubeliveurl.Substring(youtubeliveurl.LastIndexOf('/') + 1), //youtubeliveurl  input.yturl
+                        UserId = FarmerId,
+                 };
 
                 db.LiveSettings.Add(NewLiveSetting);
                 db.SaveChanges();
@@ -237,9 +250,10 @@ namespace FarmerPro.Controllers
                 {
                     statusCode = 402,
                     status = "error",
-                    message = "加入yotube失敗",
+                    message = "加入youtube失敗，請確認youtube帳號已開啟Live功能",
                 };
                 return Content(HttpStatusCode.OK, result);
+                //return Content(HttpStatusCode.OK, resultid); // for 測試錯誤
             }
 
 
@@ -285,20 +299,21 @@ namespace FarmerPro.Controllers
 
 
             var searchLiveSetting = db.LiveSettings.Where(x => x.UserId == FarmerId && x.Id== liveId)?.FirstOrDefault();
-            DateTime ytstarttime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.startTime.Hours, input.startTime.Minutes, input.startTime.Seconds);
-            DateTime ytendtime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.endTime.Hours, input.endTime.Minutes, input.endTime.Seconds);
-
-            YoutubeLive updateboardcast = new YoutubeLive();
-            string resultid = updateboardcast.UpdateYouTubeBroadcast(input.liveName, input.liveName, ytstarttime, ytendtime, searchLiveSetting.ShareURL);
-            if (resultid != "error")
-            {
-                string youtubeliveurl = @"https://youtube.com/live/" + resultid;
+            
+            //測試youtube
+            //DateTime ytstarttime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.startTime.Hours, input.startTime.Minutes, input.startTime.Seconds);
+            //DateTime ytendtime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.endTime.Hours, input.endTime.Minutes, input.endTime.Seconds);
+            //YoutubeLive updateboardcast = new YoutubeLive();
+            //string resultid = updateboardcast.UpdateYouTubeBroadcast(input.liveName, input.liveName, ytstarttime, ytendtime, searchLiveSetting.ShareURL);
+            //if (resultid != "error")
+            //{
+            //    string youtubeliveurl = @"https://youtube.com/live/" + resultid;
                 searchLiveSetting.LiveName = input.liveName;
                 searchLiveSetting.LiveDate = input.liveDate;
                 searchLiveSetting.StartTime = input.startTime;
                 searchLiveSetting.EndTime = input.endTime;
-                searchLiveSetting.YTURL = youtubeliveurl;
-                searchLiveSetting.ShareURL = youtubeliveurl.Substring(youtubeliveurl.LastIndexOf('/') + 1); //這邊可能要改
+                searchLiveSetting.YTURL = input.yturl;  //youtubeliveurl
+            searchLiveSetting.ShareURL = input.yturl.Substring(input.yturl.LastIndexOf('/') + 1); //youtubeliveurl
                 //圖片部分透過另外一支API處理
                 db.SaveChanges();
                 int LiveSettingId = searchLiveSetting.Id;
@@ -410,18 +425,17 @@ namespace FarmerPro.Controllers
                     }
                 };
                 return Content(HttpStatusCode.OK, resultReviser);
-            }
-            else 
-            {
-                var result = new
-                {
-                    statusCode = 402,
-                    status = "error",
-                    message = "更新yotube失敗",
-                };
-                return Content(HttpStatusCode.OK, result);
-
-            }
+            //} //測試youtube
+            //else 
+            //{
+            //    var result = new
+            //    {
+            //        statusCode = 402,
+            //        status = "error",
+            //        message = "更新yotube失敗",
+            //    };
+            //    return Content(HttpStatusCode.OK, result);
+            //}
 
 
 
@@ -710,7 +724,7 @@ namespace FarmerPro.Controllers
                 int farmerId = Convert.ToInt16(JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter)["Id"]);
                 var searchlivelist = db.LiveSettings
                     .Where(x => x.UserId == farmerId)?
-                    .OrderBy(y => y.LiveDate).AsEnumerable();
+                    .OrderByDescending(y => y.LiveDate).AsEnumerable();
 
 
                 if (searchlivelist == null)
@@ -748,10 +762,13 @@ namespace FarmerPro.Controllers
                                             live.LiveProduct.Where(x => x.IsTop == true)?.FirstOrDefault()?.Spec.Product.ProductTitle + "(小)",
                             liveProudct = live.LiveProduct?.Select(x => new
                             {
-                                liveProductId = x.Id,
+                                liveProductId = x.Id, 
                                 liveProductName = db.Specs.Where(y => y.Id == x.SpecId)?.FirstOrDefault().Size == true ?
                                                          db.Specs.Where(y => y.Id == x.SpecId)?.FirstOrDefault().Product.ProductTitle + "(大)" :
                                                          db.Specs.Where(y => y.Id == x.SpecId)?.FirstOrDefault().Product.ProductTitle + "(小)",
+                                liveProductPhoto = db.Albums.Where(y=>y.ProductId ==x.Spec.Product.Id)?.FirstOrDefault()?.Photo?.FirstOrDefault()?.URL,
+                                liveProductPrice = db.Specs.Where(y => y.Id == x.SpecId)?.FirstOrDefault().LivePrice,
+                                liveProductStock = db.Specs.Where(y => y.Id == x.SpecId)?.FirstOrDefault().Stock,
                             }).ToList()
                         })
                     };
@@ -872,5 +889,551 @@ namespace FarmerPro.Controllers
         //需要再補上一隻刪除特定直播的api、需要再補上一隻刪除特定直播圖片的api
 
 
+        //以下為大鈞youtubeapi路由測試
+        #region BFL-8 youtubeapi路由測試  
+        [HttpGet]
+        [Route("api/yotubego")]
+
+        public IHttpActionResult youtubego()
+        {
+
+
+            ////TBC fails
+            //string serviceAccountJsonPath = @"C:\farmerProjetFTP\upload\key\genial-venture-409501-d03720ae7f50.json";
+
+            //GoogleCredential credential;
+            //using (var stream = new FileStream(serviceAccountJsonPath, FileMode.Open, FileAccess.Read))
+            //{
+            //    credential = GoogleCredential.FromStream(stream)
+            //        .CreateScoped(new[] { YouTubeService.Scope.Youtube });
+            //}
+
+
+
+            string[] scopes = { "https://www.googleapis.com/auth/youtube" };
+            string path = @"C:\farmerProjetFTP\upload\key\";
+            UserCredential credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
+                new ClientSecrets
+                {
+                    ClientId = WebConfigurationManager.AppSettings["ytid"].ToString(),
+                    ClientSecret = WebConfigurationManager.AppSettings["ytkey"].ToString(),
+                },
+                scopes,
+                //new[] { YouTubeService.Scope.Youtube },
+                "user",
+                System.Threading.CancellationToken.None,
+                 new FileDataStore(path, true)
+                ).Result;
+
+            // 創建 YouTubeService
+            var youtubeService = new YouTubeService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = "YourApplicationName_TT"
+            });
+
+            string broadcastTitle = "youtubgo";
+            string broadcastDescription = "youtubgo";
+
+
+
+            // 建立廣播物件
+            LiveBroadcast broadcast = new LiveBroadcast();
+            broadcast.Snippet = new LiveBroadcastSnippet();
+            broadcast.Snippet.Title = broadcastTitle;
+            broadcast.Snippet.Description = broadcastDescription;
+            broadcast.Status = new LiveBroadcastStatus();
+            broadcast.Status.PrivacyStatus = "unlisted";
+
+            // 設定廣播時間
+            DateTime startTime = DateTime.Now.AddDays(1);
+            string startTimeString = startTime.ToString("o"); // 将 startTime 转换为 ISO 8601 格式的字符串
+            DateTimeOffset startTimeOffset = DateTimeOffset.ParseExact(startTimeString, "o", CultureInfo.InvariantCulture);
+            broadcast.Snippet.ScheduledStartTimeDateTimeOffset = startTimeOffset;
+
+            //DateTime endTime = end;
+            //string endTimeString = endTime.ToString("o"); // 将 startTime 转换为 ISO 8601 格式的字符串
+            //DateTimeOffset endTimeOffset = DateTimeOffset.ParseExact(endTimeString, "o", CultureInfo.InvariantCulture);
+            //broadcast.Snippet.ScheduledEndTimeDateTimeOffset = endTimeOffset;
+
+
+
+            // 創建直播
+            LiveBroadcast createdBroadcast = youtubeService.LiveBroadcasts.Insert(broadcast, "snippet,status").Execute();
+            // 獲得直播ID
+            string broadcastId = createdBroadcast.Id;
+            if (broadcastId != null)
+            {
+                var result = new
+                {
+                    statusCode = 401,
+                    status = "error",
+                    message = "欄位輸入格式不正確，請重新輸入",
+                };
+                return Content(HttpStatusCode.OK, broadcastId);
+            }
+            else 
+            {
+                var result = new
+                {
+                    statusCode = 401,
+                    status = "error",
+                    message = "欄位輸入格式不正確，請重新輸入",
+                };
+                return Content(HttpStatusCode.OK, "error");
+            }
+           
+        }
+        #endregion
+
+        #region BFL-9 youtubeapi路由測試(new方法)=>目的，傳送google網址
+        [HttpGet]
+        [Route("api/youtubego/testnew")]
+        public IHttpActionResult youtubego2()
+        {
+
+            //try
+            //{
+
+
+            var clientSecrets = new ClientSecrets
+            {
+                ClientId = WebConfigurationManager.AppSettings["ytid"].ToString(),
+                ClientSecret = WebConfigurationManager.AppSettings["ytkey"].ToString()
+            };
+
+            // 定義所需的範圍
+            string[] scopes = { "https://www.googleapis.com/auth/youtube" };
+
+            // 建立授權資料流
+            var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+            {
+                ClientSecrets = clientSecrets
+            });
+            string redirecturi = @"https://sun-live.vercel.app/dashboard/live/livesetting";
+            // 創建 AuthorizationCodeRequestUrl
+            var authorizationUrl = flow.CreateAuthorizationCodeRequest(redirecturi);
+
+            // 設置額外的參數，如範例中的 scope
+            authorizationUrl.Scope = @"https://www.googleapis.com/auth/youtube";
+
+            // 建立授權 URL
+            Uri authUrl = authorizationUrl.Build();
+
+            //// 將用戶重定向到授權 URL
+            //HttpContext.Current.Response.Redirect(authUrl.ToString());
+
+
+
+
+            var result = new
+                {
+                    statusCode = 200,
+                    status = "成功",
+                    message = "竟然成功了",
+                };
+                return Content(HttpStatusCode.OK, authUrl.ToString());
+            //}
+            //catch (Exception e)
+            //{
+            //    return Content(HttpStatusCode.OK, e.Message);
+            //}
+
+
+
+            //var code = HttpContext.Current.Request.QueryString["code"];
+            //// 使用剛剛建立的 flow 來換取憑證
+            //var credential = await flow.ExchangeCodeForTokenAsync("user", code, redirecturi, CancellationToken.None);
+
+            //// 創建 YouTubeService
+            //var youtubeService = new YouTubeService(new BaseClientService.Initializer()
+            //{
+            //    HttpClientInitializer = (Google.Apis.Http.IConfigurableHttpClientInitializer)credential,
+            //    ApplicationName = "YourApplicationName_TT"
+            //});
+
+            //string broadcastTitle = "youtubgo";
+            //string broadcastDescription = "youtubgo";
+
+
+
+            //// 建立廣播物件
+            //LiveBroadcast broadcast = new LiveBroadcast();
+            //broadcast.Snippet = new LiveBroadcastSnippet();
+            //broadcast.Snippet.Title = broadcastTitle;
+            //broadcast.Snippet.Description = broadcastDescription;
+            //broadcast.Status = new LiveBroadcastStatus();
+            //broadcast.Status.PrivacyStatus = "unlisted";
+
+            //// 設定廣播時間
+            //DateTime startTime = DateTime.Now.AddDays(1);
+            //string startTimeString = startTime.ToString("o"); // 将 startTime 转换为 ISO 8601 格式的字符串
+            //DateTimeOffset startTimeOffset = DateTimeOffset.ParseExact(startTimeString, "o", CultureInfo.InvariantCulture);
+            //broadcast.Snippet.ScheduledStartTimeDateTimeOffset = startTimeOffset;
+
+            ////DateTime endTime = end;
+            ////string endTimeString = endTime.ToString("o"); // 将 startTime 转换为 ISO 8601 格式的字符串
+            ////DateTimeOffset endTimeOffset = DateTimeOffset.ParseExact(endTimeString, "o", CultureInfo.InvariantCulture);
+            ////broadcast.Snippet.ScheduledEndTimeDateTimeOffset = endTimeOffset;
+
+
+
+            //// 創建直播
+            //LiveBroadcast createdBroadcast = youtubeService.LiveBroadcasts.Insert(broadcast, "snippet,status").Execute();
+            //// 獲得直播ID
+            //string broadcastId = createdBroadcast.Id;
+            //if (broadcastId != null)
+            //{
+            //    var result = new
+            //    {
+            //        statusCode = 401,
+            //        status = "error",
+            //        message = "欄位輸入格式不正確，請重新輸入",
+            //    };
+            //    return Content(HttpStatusCode.OK, broadcastId);
+            //}
+            //else
+            //{
+            //    var result = new
+            //    {
+            //        statusCode = 401,
+            //        status = "error",
+            //        message = "欄位輸入格式不正確，請重新輸入",
+            //    };
+            //    return Content(HttpStatusCode.OK, "error");
+            //}
+
+        }
+        #endregion
+
+        #region BFL-12 取得google帳號授權網址
+        [HttpGet]
+        [Route("api/livesetting/google")]
+        [JwtAuthFilter]
+        public IHttpActionResult getgoogleoauth2link()
+        {
+            try 
+            {
+
+            var clientSecrets = new ClientSecrets
+            {
+                ClientId = WebConfigurationManager.AppSettings["ytid"].ToString(),
+                ClientSecret = WebConfigurationManager.AppSettings["ytkey"].ToString()
+            };
+
+            // 建立授權資料流
+            var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+            {
+                ClientSecrets = clientSecrets
+            });
+            string redirecturi = @"https://sun-live.vercel.app/dashboard/live/verify";
+            // 創建 AuthorizationCodeRequestUrl
+            var authorizationUrl = flow.CreateAuthorizationCodeRequest(redirecturi);
+
+            // 設置額外的參數，如範例中的 scope
+            authorizationUrl.Scope = @"https://www.googleapis.com/auth/youtube";
+
+            // 建立授權 URL
+            Uri authUrl = authorizationUrl.Build();
+
+                if (authUrl != null)
+                {
+                    var result = new
+                    {
+                        statusCode = 200,
+                        status = "success",
+                        message = "取得成功",
+                        url = authUrl.ToString(),
+                    };
+                    return Content(HttpStatusCode.OK, result);
+                }
+                else 
+                {
+                    var result = new
+                    {
+                        statusCode = 401,
+                        status = "error",
+                        message = "取得失敗",
+                    };
+                    return Content(HttpStatusCode.OK, result);
+                }
+            
+            }
+            catch 
+            {
+                var result = new
+                {
+                    statusCode = 500,
+                    status = "error",
+                    message = "其他錯誤",
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
+
+        }
+        #endregion
+
+
+        #region BFL-10 youtubeapi路由測試(new方法，搭配BFL-9)=>目的，前端傳送網址中的QueryString，進行["code"]確認
+        [HttpPost]
+        [Route("api/youtubego/testnew")]
+        public async Task<IHttpActionResult> youtubego3(BFL10 inputs)
+        {
+
+            var clientSecrets = new ClientSecrets
+            {
+                ClientId = WebConfigurationManager.AppSettings["ytid"].ToString(),
+                ClientSecret = WebConfigurationManager.AppSettings["ytkey"].ToString()
+            };
+
+
+            // 建立授權資料流
+            var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+            {
+                ClientSecrets = clientSecrets
+            });
+
+            string redirecturi = @"https://sun-live.vercel.app/dashboard/live/livesetting";
+            string decodedCode = HttpUtility.UrlDecode(inputs.code);
+            var tokenResponse = await flow.ExchangeCodeForTokenAsync("user", decodedCode, redirecturi, CancellationToken.None);
+
+
+            // 将 TokenResponse 转换为 UserCredential
+            var credential = new UserCredential(flow, "user", tokenResponse);
+
+            //tokenResponse.Scope= 從這裡開始
+            // 創建 YouTubeService
+            var youtubeService = new YouTubeService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = "YourApplicationName_TT"
+            });
+
+
+            return Content(HttpStatusCode.OK, tokenResponse.AccessToken);
+
+        }
+        #endregion
+
+        #region BFL-13  驗證Oauth2並回傳Token
+        [HttpPost]
+        [Route("api/livesetting/authcode")]
+        public async Task<IHttpActionResult> codeturntotoken(BFL10 inputs)
+        {
+            try
+            {
+                var clientSecrets = new ClientSecrets
+                {
+                    ClientId = WebConfigurationManager.AppSettings["ytid"].ToString(),
+                    ClientSecret = WebConfigurationManager.AppSettings["ytkey"].ToString()
+                };
+
+                // 建立授權資料流
+                var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+                {
+                    ClientSecrets = clientSecrets
+                });
+
+                string redirecturi = @"https://sun-live.vercel.app/dashboard/live/verify"; //這邊可以改
+                string decodedCode = HttpUtility.UrlDecode(inputs.code);
+                var tokenResponse = await flow.ExchangeCodeForTokenAsync("user", decodedCode, redirecturi, CancellationToken.None);
+
+                if (tokenResponse != null)
+                {
+                    var result = new
+                    {
+                        statusCode = 200,
+                        status = "success",
+                        message = "取得成功",
+                        token = tokenResponse.AccessToken.ToString(),
+                    };
+                    return Content(HttpStatusCode.OK, result);
+                }
+                else
+                {
+                    var result = new
+                    {
+                        statusCode = 401,
+                        status = "error",
+                        message = "取得失敗",
+                    };
+                    return Content(HttpStatusCode.OK, result);
+                }
+            }
+            catch
+            {
+                var result = new
+                {
+                    statusCode = 500,
+                    status = "error",
+                    message = "其他錯誤",
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
+        }
+        #endregion
+
+
+
+        #region BFL-11 新增後台直播資訊(新增產品直播價)
+        [HttpPost]
+        [Route("api/youtubego/testne/addlive")]
+        public IHttpActionResult CreateNewLiveSettingfortest([FromBody] CreateNewLiveSetting input)
+        {
+            //try
+            //{
+            if (!ModelState.IsValid)
+            {
+                var result = new
+                {
+                    statusCode = 401,
+                    status = "error",
+                    message = "欄位輸入格式不正確，請重新輸入",
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
+
+            //youtube 測試功能
+            YoutubeLive addboardcast = new YoutubeLive();
+            UserCredential credentialoutput = addboardcast.CreateToken(input.accessToken);
+            DateTime ytstarttime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.startTime.Hours, input.startTime.Minutes, input.startTime.Seconds);
+            DateTime ytendtime = new DateTime(input.liveDate.Date.Year, input.liveDate.Date.Month, input.liveDate.Date.Day, input.endTime.Hours, input.endTime.Minutes, input.endTime.Seconds);
+            string resultid = addboardcast.CreateYouTubeBroadcast(credentialoutput, input.liveName, input.liveName, ytstarttime, ytendtime);
+
+
+            if (resultid != "error" && resultid.Length == 11)
+            {
+                string youtubeliveurl = @"https://youtube.com/live/" + resultid;
+                var NewLiveSetting = new LiveSetting
+                {
+                    LiveName = input.liveName,
+                    LiveDate = input.liveDate.Date,
+                    StartTime = input.startTime,
+                    EndTime = input.endTime,
+                    YTURL = youtubeliveurl,     //youtubeliveurl    input.yturl
+                                                //LivePic= HasPhotoFile? imglList[0]:null,
+                    ShareURL = youtubeliveurl.Substring(youtubeliveurl.LastIndexOf('/') + 1), //youtubeliveurl
+                    UserId = 11,//先固定住
+                };
+
+                db.LiveSettings.Add(NewLiveSetting);
+                db.SaveChanges();
+                int LiveSettingId = NewLiveSetting.Id;
+
+                var LiveProduct = input.liveproduct.Select(LP => new LiveProduct
+                {
+                    IsTop = false,
+                    LiveSettingId = LiveSettingId,
+                    SpecId = db.Products.Where(x => x.Id == LP.productId).AsEnumerable().FirstOrDefault().Spec.Where(x => x.Size == Convert.ToBoolean(LP.productSize)).FirstOrDefault().Id,
+                }).ToList();
+
+                db.LiveProducts.AddRange(LiveProduct);
+                db.SaveChanges();
+
+                //這邊要加上設定置頂specid。因為前端不需要在此頁面加入置頂，所以先隱藏，換成下面那一段
+                //int topspecId = db.Products.Where(x => x.Id == input.topProductId).FirstOrDefault().Spec.AsEnumerable().Where(y => y.Size == Convert.ToBoolean(input.topProductSize)).FirstOrDefault().Id;
+                //var TopProductSetting = db.LiveProducts.Where(x => x.LiveSettingId == LiveSettingId && x.SpecId == topspecId)?.FirstOrDefault();
+                //if (TopProductSetting != null) 
+                //{
+                //    TopProductSetting.IsTop = true;
+                //    db.SaveChanges();
+                //}
+                //前端不需要在此頁面加入置頂，因此後端選取第一個產品，做為置頂產品
+                var LiveProductList = db.LiveProducts.Where(x => x.LiveSettingId == LiveSettingId)?.FirstOrDefault();
+                if (LiveProductList != null)
+                {
+                    LiveProductList.IsTop = true;
+                    db.SaveChanges();
+                }
+
+                foreach (var LP in input.liveproduct)
+                {
+                    var specitem = db.Products.Where(x => x.Id == LP.productId).AsEnumerable().FirstOrDefault().Spec.Where(x => x.Size == Convert.ToBoolean(LP.productSize)).FirstOrDefault();
+                    if (specitem != null)
+                    {
+                        specitem.LivePrice = LP.liveprice;
+                    }
+                }
+                db.SaveChanges();
+
+                var searchLiveSetting = db.LiveSettings.Where(x => x.Id == LiveSettingId)?
+                .Select(liveSetting => new
+                {
+                    LiveSetting = liveSetting,
+                    LiveAlbum = db.LiveAlbum
+                        .Where(album => album.LiveId == liveSetting.Id)
+                        .OrderByDescending(album => album.CreateTime)
+                        .FirstOrDefault()
+                })
+                .FirstOrDefault();
+
+                var resultReturn = new
+                {
+                    statusCode = 200,
+                    status = "success",
+                    message = "新增成功",
+                    data = new
+                    {
+                        liveId = searchLiveSetting.LiveSetting.Id,
+                        liveName = searchLiveSetting.LiveSetting.LiveName,
+                        liveDate = searchLiveSetting.LiveSetting.LiveDate.Date.ToString("yyyy/MM/dd"),
+                        startTime = searchLiveSetting.LiveSetting.StartTime.ToString().Substring(0, 5),
+                        endTime = searchLiveSetting.LiveSetting.EndTime.ToString().Substring(0, 5),
+                        //livePic= searchLiveSetting.LiveAlbum?.Photo,
+                        yturl = searchLiveSetting.LiveSetting.YTURL,
+                        topProductId = searchLiveSetting.LiveSetting.LiveProduct.Where(x => x.IsTop == true).FirstOrDefault().Spec.Product.Id,
+                        topProductSize = searchLiveSetting.LiveSetting.LiveProduct.Where(x => x.IsTop == true).FirstOrDefault().Spec.Size,
+                        liveproduct = searchLiveSetting.LiveSetting.LiveProduct.Select(x => new
+                        {
+                            productId = db.Specs.Where(y => y.Id == x.SpecId)?.FirstOrDefault().ProductId,
+                            productName = db.Specs.Where(y => y.Id == x.SpecId)?.FirstOrDefault().Product.ProductTitle,
+                            productSize = db.Specs.Where(y => y.Id == x.SpecId)?.FirstOrDefault().Size,
+                            liveprice = db.Specs.Where(y => y.Id == x.SpecId)?.FirstOrDefault().LivePrice,
+                            liveproductId = x.Id,
+                        }).ToList()
+                    }
+                };
+                return Content(HttpStatusCode.OK, resultReturn);
+            }
+            else
+            {
+                var result = new
+                {
+                    statusCode = 402,
+                    status = "error",
+                    message = "加入youtube失敗",
+                };
+                return Content(HttpStatusCode.OK, result);
+                //return Content(HttpStatusCode.OK, resultid); // for 測試錯誤
+            }
+
+
+
+
+
+                //}
+                //catch
+                //{
+                //    var result = new
+                //    {
+                //        statusCode = 500,
+                //        status = "error",
+                //        message = "其他錯誤",
+                //    };
+                //    return Content(HttpStatusCode.OK, result);
+                //}
+         }
+            #endregion
+
+
+
+
+        
+
     }
+    public class BFL10 
+    {
+        public string code { get; set; }
+    }
+
 }
