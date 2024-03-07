@@ -152,7 +152,8 @@ namespace FarmerPro.Controllers
                         {
                             statusCode = 200,
                             status = "success",
-                            message = "訂單狀態更新成功",
+                            message = $"訂單狀態更新成功",
+                            //message = $"訂單狀態更新成功，SID:{connectionId},userID:{id}",
                         };
                         return Content(HttpStatusCode.OK, result);
                     }

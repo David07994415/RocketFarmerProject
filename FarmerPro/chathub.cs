@@ -271,11 +271,11 @@ namespace FarmerPro
                 { hasUser = true; GlobalVariable._userList[userId.ToString()] = connectionId; };
                 if (hasUser == false) { GlobalVariable._userList.Add(userId.ToString(), connectionId); } //如果沒有使用者ID，把connectionId加入
                 
-                //Clients.Client(connectionId).notifyMessage($"加入addintosocket成功，userId為:{GlobalVariable._userList[userId.ToString()]}，socketId為:{connectionId}");
+                //Clients.Client(connectionId).notifyMessage($"加入addintosocket成功，userId為:{userId}，socketId為:{connectionId}");
             }
-            catch
+            catch(Exception ex)
             {
-                
+                Clients.All.notifyMessage(ex.Message);
             }
         }
 
