@@ -28,12 +28,12 @@ namespace FarmerPro.Models
         [Display(Name = "GUID驗證碼")]
         public Guid? EmailGUID { get; set; }
 
-        [Required]
+        //[Required]
         [MaxLength(500)]
         [Display(Name = "密碼")]
         public string Password { get; set; }
 
-        [Required]
+        //[Required]
         [MaxLength(500)]
         [Display(Name = "加鹽")]
         public string Salt { get; set; }
