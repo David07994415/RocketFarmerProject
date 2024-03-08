@@ -13,6 +13,7 @@ using System.Web.Configuration;
 using Google.Apis.PeopleService.v1;
 using Google.Apis.PeopleService.v1.Data;
 using Microsoft.Ajax.Utilities;
+using static Google.Apis.PeopleService.v1.PeopleResource;
 
 namespace FarmerPro.Models
 {
@@ -55,17 +56,27 @@ namespace FarmerPro.Models
                 var PeopleService = new PeopleServiceService(new BaseClientService.Initializer()
                 {
                     HttpClientInitializer = credential,
-                    ApplicationName = "Google People Infor APIs"
+                    ApplicationName = "user"
                 });
 
-
-                Person me = PeopleService.People.Get("people/me").Execute();
+                GetRequest peopleRequest =PeopleService.People.Get("people/me");
+                peopleRequest.PersonFields = "names,emailAddresses";
+                Person me = peopleRequest.Execute();
+                //var PR = PeopleService.People.Get("people/me");
+                //PR.RequestMaskIncludeField = "person.names,person.emailAddresses";
+                //Person me = PR.Execute();
 
                 List<string> UserInforList=new List<string>();
                 if (me != null) 
                 {
-                    UserInforList.Add(me.Names[0].DisplayName);
-                    UserInforList.Add(me.EmailAddresses[0].Value);
+                    if (me.Names[0] != null) 
+                    {
+                        UserInforList.Add(me.Names[0].DisplayName);
+                    }
+                    if (me.EmailAddresses[0] != null) 
+                    {
+                        UserInforList.Add(me.EmailAddresses[0].Value);
+                    }
                 }
 
                 return UserInforList;
@@ -74,7 +85,7 @@ namespace FarmerPro.Models
             {
                 List<string> catcherror = new List<string>
                 {
-                    ex.Message
+                    ex.Message+"_"+ex.StackTrace
                 };
                 return catcherror;
             }
@@ -84,7 +95,8 @@ namespace FarmerPro.Models
         {
             TokenResponse token = new TokenResponse();
             token.AccessToken = tokeninput;
-            token.Scope = @"https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile";
+            token.Scope = @"https://www.googleapis.com/auth/userinfo.profile";
+            //https://www.googleapis.com/auth/userinfo.email%20
             token.ExpiresInSeconds = 3584;
             token.Issued = DateTime.Now;
             token.IssuedUtc = DateTime.UtcNow;
@@ -112,7 +124,6 @@ namespace FarmerPro.Models
         {
             var IsRegister = db.Users.Where(x=> x.Account == account)?.FirstOrDefault();
             return IsRegister;
-
         }
 
         
