@@ -1,6 +1,8 @@
 ﻿using FarmerPro.Models;
 using FarmerPro.Models.ViewModel;
 using FarmerPro.Securities;
+using Google.Apis.Auth.OAuth2.Flows;
+using Google.Apis.Auth.OAuth2;
 using Konscious.Security.Cryptography;
 using System;
 using System.Collections.Generic;
@@ -10,8 +12,13 @@ using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
+using System.Web.Configuration;
 using System.Web.Http;
 using System.Web.Http.Results;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Web;
+using System.Security.Principal;
 
 namespace FarmerPro.Controllers
 {
@@ -32,68 +39,68 @@ namespace FarmerPro.Controllers
         {
             //try
             //{
-                if (!ModelState.IsValid)
+            if (!ModelState.IsValid)
+            {
+                //result訊息
+                var result = new
+                {
+                    statusCode = 401,
+                    status = "error",
+                    message = "帳號密碼格式不正確，請重新輸入",
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
+            else
+            {
+                string accountCheck = input.account;
+                var Isregister = db.Users.Where(ac => ac.Account == accountCheck)?.FirstOrDefault();
+                if (Isregister != null)
                 {
                     //result訊息
                     var result = new
                     {
-                        statusCode = 401,
+                        statusCode = 402,
                         status = "error",
-                        message = "帳號密碼格式不正確，請重新輸入",
+                        message = "帳號已存在，請重新輸入",
                     };
                     return Content(HttpStatusCode.OK, result);
                 }
                 else
                 {
-                    string accountCheck = input.account;
-                    var Isregister = db.Users.Where(ac => ac.Account == accountCheck)?.FirstOrDefault();
-                    if (Isregister != null)
+                    //Hash 加鹽加密
+                    string password = input.password;
+                    var salt = CreateSalt();
+                    string saltStr = Convert.ToBase64String(salt); //將 byte 改回字串存回資料表
+                    var hash = HashPassword(password, salt);
+                    string hashPassword = Convert.ToBase64String(hash);
+
+                    //資料表User 賦予 到 newaccount   
+                    var newaccount = new User
                     {
-                        //result訊息
-                        var result = new
-                        {
-                            statusCode = 402,
-                            status = "error",
-                            message = "帳號已存在，請重新輸入",
-                        };
-                        return Content(HttpStatusCode.OK, result);
-                    }
-                    else
+                        //將input 輸入的 Account(model資料表欄位) 賦予 到 Account         
+                        Account = input.account,
+                        Password = hashPassword,
+                        Category = input.category,
+                        Salt = saltStr,
+                    };
+
+                    // 將 newaccount 加入 User 集合
+                    db.Users.Add(newaccount);
+                    // 執行資料庫儲存變更操作
+                    db.SaveChanges();
+
+                    //result訊息
+                    var result = new
                     {
-                        //Hash 加鹽加密
-                        string password = input.password;
-                        var salt = CreateSalt();
-                        string saltStr = Convert.ToBase64String(salt); //將 byte 改回字串存回資料表
-                        var hash = HashPassword(password, salt);
-                        string hashPassword = Convert.ToBase64String(hash);
-
-                        //資料表User 賦予 到 newaccount   
-                        var newaccount = new User
-                        {
-                            //將input 輸入的 Account(model資料表欄位) 賦予 到 Account         
-                            Account = input.account,
-                            Password = hashPassword,
-                            Category = input.category,
-                            Salt = saltStr,
-                        };
-
-                        // 將 newaccount 加入 User 集合
-                        db.Users.Add(newaccount);
-                        // 執行資料庫儲存變更操作
-                        db.SaveChanges();
-
-                        //result訊息
-                        var result = new
-                        {
-                            statusCode = 200,
-                            status = "success",
-                            message = "註冊成功",
-                        };
-                        return Content(HttpStatusCode.OK, result);
-                        //return Ok(result);
-                    }
-
+                        statusCode = 200,
+                        status = "success",
+                        message = "註冊成功",
+                    };
+                    return Content(HttpStatusCode.OK, result);
+                    //return Ok(result);
                 }
+
+            }
 
             //}
             //catch
@@ -192,7 +199,7 @@ namespace FarmerPro.Controllers
                         // GenerateToken() 生成新 JwtToken 用法
                         JwtAuthUtil jwtAuthUtil = new JwtAuthUtil();
                         string jwtToken = jwtAuthUtil.GenerateToken(IsUser.Id, (int)IsUser.Category);
-                       
+
                         var result = new
                         {
                             statusCode = 200,
@@ -265,6 +272,230 @@ namespace FarmerPro.Controllers
             public string password { get; set; }
         }
         #endregion
+
+
+        #region FCS-7 取得google帳號授權網址(登入)
+        [HttpGet]
+        [Route("api/login/google")]
+        public IHttpActionResult GetGooleOauth2Link()
+        {
+            try
+            {
+                var clientSecrets = new ClientSecrets
+                {
+                    ClientId = WebConfigurationManager.AppSettings["ytid"].ToString(),
+                    ClientSecret = WebConfigurationManager.AppSettings["ytkey"].ToString()
+                };
+
+                // 建立授權資料流
+                var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+                {
+                    ClientSecrets = clientSecrets
+                });
+                //string redirecturi = @"https://sun-live.vercel.app/auth/login";  //這邊前端要改，後端console要加入
+                string redirecturi = @"http://localhost:3000/dashboard/live/verify";  //這邊前端要改，後端console要加入
+                // 創建 AuthorizationCodeRequestUrl
+                var authorizationUrl = flow.CreateAuthorizationCodeRequest(redirecturi);
+
+                // 設置額外的參數，如範例中的 scope
+                authorizationUrl.Scope = @"https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email";
+                //https://www.googleapis.com/auth/userinfo.email%20
+                // 建立授權 URL
+                Uri authUrl = authorizationUrl.Build();
+                string authUrlSpace = authUrl.ToString().Replace(" ", "%20");
+
+                if (authUrl != null)
+                {
+                    var result = new
+                    {
+                        statusCode = 200,
+                        status = "success",
+                        message = "取得成功",
+                        url = authUrlSpace,
+                    };
+                    return Content(HttpStatusCode.OK, result);
+                }
+                else
+                {
+                    var result = new
+                    {
+                        statusCode = 401,
+                        status = "error",
+                        message = "取得失敗",
+                    };
+                    return Content(HttpStatusCode.OK, result);
+                }
+            }
+            catch
+            {
+                var result = new
+                {
+                    statusCode = 500,
+                    status = "error",
+                    message = "其他錯誤",
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
+        }
+        #endregion
+
+        #region FCS-8  驗證Oauth2並回傳登入結果
+        [HttpPost]
+        [Route("api/login/authcode")]
+        public async Task<IHttpActionResult> LoginCodeTurntoToken(LoginToken inputs)
+        {
+            //try
+            //{
+            var clientSecrets = new ClientSecrets
+            {
+                ClientId = WebConfigurationManager.AppSettings["ytid"].ToString(),
+                ClientSecret = WebConfigurationManager.AppSettings["ytkey"].ToString()
+            };
+
+            // 建立授權資料流
+            var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+            {
+                ClientSecrets = clientSecrets
+            });
+
+
+            //string redirecturi = @"https://sun-live.vercel.app/auth/login"; //這邊前端要改，後端console要加入
+            string redirecturi = @"http://localhost:3000/dashboard/live/verify";  //這邊前端要改，後端console要加入
+            string decodedCode = HttpUtility.UrlDecode(inputs.code);
+            var tokenResponse = await flow.ExchangeCodeForTokenAsync("user", decodedCode, redirecturi, CancellationToken.None);
+
+            var credential = new UserCredential(flow, "user", tokenResponse);
+
+            GoogleOauth GoObj = new GoogleOauth();
+            List<string> UserInfo = GoObj.RetrieveUserInfor(credential);
+
+            if (UserInfo.Count >= 2) //Google有回傳資料
+            {
+                string UserName = UserInfo[0];
+                string UserAccount = UserInfo[1];
+                User IsUser = GoObj.CheckUser(UserAccount);
+                if (IsUser != null)   //資料庫已經有此帳號資料
+                {
+                    JwtAuthUtil jwtAuthUtil = new JwtAuthUtil();
+                    string jwtToken = jwtAuthUtil.GenerateToken(IsUser.Id, (int)IsUser.Category);
+
+                    var ResultLogin = new
+                    {
+                        statusCode = 200,
+                        status = "success",
+                        message = "第三方登入成功", // token失效時間:一天
+                        token = jwtToken,  // 登入成功時，回傳登入成功順便夾帶 JwtToken
+                        data = new
+                        {
+                            id = IsUser.Id,
+                            nickName = IsUser.NickName,
+                            account = IsUser.Account,
+                            photo = IsUser.Photo,
+                            category = IsUser.Category,
+                            birthday = IsUser.Birthday,
+                            phone = IsUser.Phone,
+                            sex = IsUser.Sex,
+                            vision = IsUser.Vision,
+                            description = IsUser.Description,
+                        }
+                    };
+                    return Content(HttpStatusCode.OK, ResultLogin);
+                }
+                else  //資料庫沒有帳號資料，要先新增
+                {
+
+                    //Hash 加鹽加密
+                    Guid GuidPW = Guid.NewGuid();
+                    string password = GuidPW.ToString();   // 亂數密碼
+                    var salt = CreateSalt();
+                    string saltStr = Convert.ToBase64String(salt); //將 byte 改回字串存回資料表
+                    var hash = HashPassword(password, salt);
+                    string hashPassword = Convert.ToBase64String(hash);
+
+                    //資料表User 賦予 到 newaccount   
+                    var newaccount = new User
+                    {
+                        //將input 輸入的 Account(model資料表欄位) 賦予 到 Account         
+                        Account = UserAccount,
+                        Password = hashPassword,
+                        Category = UserCategory.一般會員,
+                        NickName = UserName,
+                        Salt = saltStr,
+                    };
+
+                    // 將 newaccount 加入 User 集合
+                    db.Users.Add(newaccount);
+                    // 執行資料庫儲存變更操作
+                    db.SaveChanges();
+
+                    var IsRegister = db.Users.Where(x => x.Account == UserAccount)?.ToList().FirstOrDefault();
+                    if (IsRegister != null)
+                    {
+                        JwtAuthUtil jwtAuthUtilnew = new JwtAuthUtil();
+                        string jwtToken = jwtAuthUtilnew.GenerateToken(IsRegister.Id, (int)IsRegister.Category);
+                        var ResultLogin = new
+                        {
+                            statusCode = 200,
+                            status = "success",
+                            message = "註冊與第三方登入成功", // token失效時間:一天
+                            token = jwtToken,  // 登入成功時，回傳登入成功順便夾帶 JwtToken
+                            data = new
+                            {
+                                id = IsRegister.Id,
+                                nickName = IsRegister.NickName,
+                                account = IsRegister.Account,
+                                photo = IsRegister.Photo,
+                                category = IsRegister.Category,
+                                birthday = IsRegister.Birthday,
+                                phone = IsRegister.Phone,
+                                sex = IsRegister.Sex,
+                                vision = IsRegister.Vision,
+                                description = IsRegister.Description,
+                            }
+                        };
+                        return Content(HttpStatusCode.OK, ResultLogin);
+                    }
+                    else 
+                    {
+                        var result = new
+                        {
+                            statusCode = 401,
+                            status = "error",
+                            message = "登入失敗",
+                        };
+                        return Content(HttpStatusCode.OK, result);
+                    }
+                }
+            }
+            else
+            {
+                var result = new
+                {
+                    statusCode = 401,
+                    status = "error",
+                    message = "登入失敗",
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
+            //}
+            //catch
+            //{
+            //    var result = new
+            //    {
+            //        statusCode = 500,
+            //        status = "error",
+            //        message = "其他錯誤",
+            //    };
+            //    return Content(HttpStatusCode.OK, result);
+            //}
+        }
+        #endregion
+
+        public class LoginToken
+        {
+            public string code { get; set; }
+        }
+
 
     }
 }
