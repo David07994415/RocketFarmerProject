@@ -23,15 +23,22 @@ using static System.Net.WebRequestMethods;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using System.Web.Http.Results;
 using System.Web.Configuration;
-
+using NSwag.Annotations;
 
 namespace FarmerPro.Controllers
 {
+    [OpenApiTag("Farmer", Description = "小農")]
     public class FarmerController : ApiController
     {
         private FarmerProDB db = new FarmerProDB();
 
         #region BFP-01 取得小農單一商品資料(有包含相片)
+
+        /// <summary>
+        /// BFP-01 取得小農單一商品資料(有包含相片)
+        /// </summary>
+        /// <param name="Id">小農Id</param>
+        /// <returns>返回單一商品資料的 JSON 物件</returns>
         [HttpGet]
         [Route("api/farmer/product/{Id}")]
         [JwtAuthFilter]
@@ -63,8 +70,6 @@ namespace FarmerPro.Controllers
                 //        db.Albums.Remove(linkProductandAlbum);
                 //        db.SaveChanges();
                 //}
-
-
 
                 var result = new
                 {
@@ -124,9 +129,15 @@ namespace FarmerPro.Controllers
             //}
         }
 
-        #endregion
+        #endregion BFP-01 取得小農單一商品資料(有包含相片)
 
         #region BFP-02 新增小農單一商品資料(不包含上傳相片)
+
+        /// <summary>
+        /// BFP-02 新增小農單一商品資料(不包含上傳相片)
+        /// </summary>
+        /// <param name="CreateProduct">商品資料</param>
+        /// <returns>返回單一商品資料的 JSON 物件</returns>
         [HttpPost]
         [Route("api/farmer/product")]
         [JwtAuthFilter]
@@ -180,12 +191,11 @@ namespace FarmerPro.Controllers
 
                         //鏈結產品和相簿
                         //var linkProductandAlbum = db.Albums.Where(x => x.UserId == farmerId && x.ProductId == 0)?.FirstOrDefault();
-                        //if (linkProductandAlbum != null) 
+                        //if (linkProductandAlbum != null)
                         //{
                         //    linkProductandAlbum.ProductId = newproduct.Id;
                         //    db.SaveChanges();
                         //}
-
 
                         var newproductsmall = new Spec // 加入小產品Spec
                         {
@@ -246,7 +256,6 @@ namespace FarmerPro.Controllers
                             }
                         };
                         return Content(HttpStatusCode.OK, result);
-
                     }
                 }
             }
@@ -261,9 +270,16 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-        #endregion
+
+        #endregion BFP-02 新增小農單一商品資料(不包含上傳相片)
 
         #region BFP-03 上傳回拋小農單一商品圖片(多張，及時渲染，沒有PUT功能)
+
+        /// <summary>
+        /// BFP-03 上傳回拋小農單一商品圖片(多張，及時渲染，沒有PUT功能)
+        /// </summary>
+        /// <param name="productId">商品Id</param>
+        /// <returns>返回商品圖片</returns>
         [HttpPost]
         [Route("api/farmer/product/pic/{productId}")]
         [JwtAuthFilter]
@@ -383,7 +399,6 @@ namespace FarmerPro.Controllers
                         // 載入原始圖片，調整圖片大小
                         using (var image = Image.Load<Rgba32>(outputPath))
                         {
-
                             // 設定最大檔案大小 (2MB)
                             long maxFileSizeInBytes = 2 * 1024 * 1024;
 
@@ -396,7 +411,6 @@ namespace FarmerPro.Controllers
                                 // 檢查檔案大小是否超過限制
                                 if (currentFileSize > maxFileSizeInBytes)
                                 {
-
                                     // 如果超過，可能需要進一步調整，或者進行其他處理
                                     // 這裡僅僅是一個簡單的示例，實際應用可能需要更複雜的處理邏輯
                                     //// 設定裁切尺寸
@@ -409,7 +423,6 @@ namespace FarmerPro.Controllers
                                         Size = new Size(MaxWidth, MaxHeight),
                                         Mode = ResizeMode.Max
                                     }));
-
                                 }
                                 else { }
                             }
@@ -477,10 +490,19 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-        #endregion
+
+        #endregion BFP-03 上傳回拋小農單一商品圖片(多張，及時渲染，沒有PUT功能)
+
         //可能要獨立一隻API，空白表單讀取get時候，清空之前的暫存相簿=>修正上傳圖片邏輯，不用此API了
 
         #region BFP-04 修改小農單一商品(會回傳圖片)
+
+        /// <summary>
+        /// BFP-04 修改小農單一商品(會回傳圖片)
+        /// </summary>
+        /// <param name="productId">商品Id</param>
+        /// <param name="input">商品資料</param>
+        /// <returns>返回單一商品資料的 JSON 物件</returns>
         [HttpPut]
         [Route("api/farmer/product/{productId}")]
         [JwtAuthFilter]
@@ -616,9 +638,11 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-        #endregion
+
+        #endregion BFP-04 修改小農單一商品(會回傳圖片)
 
         #region BFP-05 刪除小農單一商品(使用軟刪除)
+
         //[HttpDelete]
         //[Route("api/farmer/product/{productId}")]
         //[JwtAuthFilter]
@@ -626,66 +650,74 @@ namespace FarmerPro.Controllers
         //{
         //    try
         //    {
-            //    //先取得小農Id
-            //    int farmerId = Convert.ToInt16(JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter)["Id"]);
+        //    //先取得小農Id
+        //    int farmerId = Convert.ToInt16(JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter)["Id"]);
 
-            //    var TargetProduct = db.Products.Where(x => x.Id == productId && x.UserId == farmerId)?.FirstOrDefault();
-            //    if (TargetProduct == null)
-            //    {
-            //        var result = new
-            //        {
-            //            statusCode = 401,
-            //            status = "error",
-            //            message = "產品Id不存在",
-            //        };
-            //        return Content(HttpStatusCode.OK, result);
-            //    }
-            //    //如果真的刪除了，訂單資料會串不到=>使用軟刪除，再product和Spec表單都多開一個IsDelete欄位
-            //    else if (TargetProduct.IsDelete == true)
-            //    {
-            //        var result = new
-            //        {
-            //            statusCode = 402,
-            //            status = "error",
-            //            message = "該產品Id已經刪除，請勿使用該產品Id",
-            //        };
-            //        return Content(HttpStatusCode.OK, result);
-            //    }
-            //    else 
-            //    {
-            //        var TargetProductSpecSmall = db.Specs.Where(x => x.ProductId == productId && x.Size==false && x.IsDelete == false)?.FirstOrDefault();
-            //        var TargetProductSpecLarge = db.Specs.Where(x => x.ProductId == productId && x.Size == true && x.IsDelete == false)?.FirstOrDefault();
+        //    var TargetProduct = db.Products.Where(x => x.Id == productId && x.UserId == farmerId)?.FirstOrDefault();
+        //    if (TargetProduct == null)
+        //    {
+        //        var result = new
+        //        {
+        //            statusCode = 401,
+        //            status = "error",
+        //            message = "產品Id不存在",
+        //        };
+        //        return Content(HttpStatusCode.OK, result);
+        //    }
+        //    //如果真的刪除了，訂單資料會串不到=>使用軟刪除，再product和Spec表單都多開一個IsDelete欄位
+        //    else if (TargetProduct.IsDelete == true)
+        //    {
+        //        var result = new
+        //        {
+        //            statusCode = 402,
+        //            status = "error",
+        //            message = "該產品Id已經刪除，請勿使用該產品Id",
+        //        };
+        //        return Content(HttpStatusCode.OK, result);
+        //    }
+        //    else
+        //    {
+        //        var TargetProductSpecSmall = db.Specs.Where(x => x.ProductId == productId && x.Size==false && x.IsDelete == false)?.FirstOrDefault();
+        //        var TargetProductSpecLarge = db.Specs.Where(x => x.ProductId == productId && x.Size == true && x.IsDelete == false)?.FirstOrDefault();
 
-            //        TargetProductSpecSmall.IsDelete = true;
-            //        TargetProductSpecLarge.IsDelete = true;
-            //        TargetProduct.IsDelete = true;
-            //        db.SaveChanges();
+        //        TargetProductSpecSmall.IsDelete = true;
+        //        TargetProductSpecLarge.IsDelete = true;
+        //        TargetProduct.IsDelete = true;
+        //        db.SaveChanges();
 
-            //        var result = new
-            //        {
-            //            statusCode = 200,
-            //            status = "success",
-            //            message = "刪除成功",
-            //        };
-            //        return Content(HttpStatusCode.OK, result);
-            //    }
+        //        var result = new
+        //        {
+        //            statusCode = 200,
+        //            status = "success",
+        //            message = "刪除成功",
+        //        };
+        //        return Content(HttpStatusCode.OK, result);
+        //    }
 
-            //}
-            //catch
-            //{
-            //    var result = new
-            //    {
-            //        statusCode = 500,
-            //        status = "error",
-            //        message = "其他錯誤",
-            //    };
-            //    return Content(HttpStatusCode.OK, result);
-            //}
         //}
-        #endregion 
+        //catch
+        //{
+        //    var result = new
+        //    {
+        //        statusCode = 500,
+        //        status = "error",
+        //        message = "其他錯誤",
+        //    };
+        //    return Content(HttpStatusCode.OK, result);
+        //}
+        //}
+
+        #endregion BFP-05 刪除小農單一商品(使用軟刪除)
+
         // 先hide住此API內部codes，IsDelete欄位還沒有開啟
 
         #region BFP-06 刪除小農單一商品圖片(使用硬刪除)
+
+        /// <summary>
+        /// BFP-06 刪除小農單一商品圖片(使用硬刪除)
+        /// </summary>
+        /// <param name="photoId">商品相片Id</param>
+        /// <returns>返回刪除狀態</returns>
         [HttpDelete]
         [Route("api/farmer/product/pic/{photoId}")]
         [JwtAuthFilter]
@@ -712,14 +744,14 @@ namespace FarmerPro.Controllers
                     int TargetAlbumId = TargetPhoto.AlbumId;
                     string TargetPhotoName = TargetPhoto.URL.Substring(TargetPhoto.URL.LastIndexOf('/') + 1);
                     //刪除實體資料夾的相片
-                    string root = HttpContext.Current.Server.MapPath($"~/upload/farmer/{farmerId}/{TargetAlbumId}/{TargetPhotoName}"); 
+                    string root = HttpContext.Current.Server.MapPath($"~/upload/farmer/{farmerId}/{TargetAlbumId}/{TargetPhotoName}");
                     if (Directory.Exists(root))
                     {
                         Directory.Delete(root);
                     }
                     //刪除資料庫的資料
-                   db.Photos.Remove(TargetPhoto);
-                   db.SaveChanges();
+                    db.Photos.Remove(TargetPhoto);
+                    db.SaveChanges();
 
                     var UpdateAlbum = db.Photos.Where(x => x.AlbumId == TargetAlbumId)?.AsEnumerable();
 
@@ -728,16 +760,15 @@ namespace FarmerPro.Controllers
                         statusCode = 200,
                         status = "success",
                         message = "刪除成功",
-                         data = UpdateAlbum.Select(x => new
-                         {
-                             photoId = x.Id,
-                             src = x.URL,
-                             alt = x.URL.Substring(x.URL.LastIndexOf('/') + 1),
-                         }).ToList(),
+                        data = UpdateAlbum.Select(x => new
+                        {
+                            photoId = x.Id,
+                            src = x.URL,
+                            alt = x.URL.Substring(x.URL.LastIndexOf('/') + 1),
+                        }).ToList(),
                     };
                     return Content(HttpStatusCode.OK, result);
                 }
-
             }
             catch
             {
@@ -750,9 +781,16 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-        #endregion
+
+        #endregion BFP-06 刪除小農單一商品圖片(使用硬刪除)
 
         #region BFP-07 搜尋特定產品(小農自有，清單搜尋)
+
+        /// <summary>
+        /// BFP-07 搜尋特定產品(小農自有，清單搜尋)
+        /// </summary>
+        /// <param name="input">商品Title</param>
+        /// <returns>返回特定產品資料的 JSON 物件</returns>
         [HttpPost]
         [Route("api/farmer/productlist/search")]
         [JwtAuthFilter]
@@ -760,58 +798,58 @@ namespace FarmerPro.Controllers
         {
             //try
             //{
-                int farmerId = Convert.ToInt16(JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter)["Id"]);
-                string searchCheck = input.serchQuery;
-                //var searchproductspeclist=db.Specs  //這邊是原本用spec撈取的邏輯，目前改用下方用小產品為主的回傳
-                //    .Where(x=>x.Product.ProductTitle.Contains(searchCheck)&& x.Product.UserId== farmerId)?
-                //    .OrderBy(y=>y.Product.UpdateStateTime).AsEnumerable(); //WHERE條件要加上IsDelete==false
-                var searchproductlist = db.Products.Where(x => x.UserId == farmerId && x.ProductTitle.Contains(searchCheck))?.OrderBy(y=>y.UpdateStateTime).AsEnumerable();
-                //WHERE條件要加上IsDelete==false
+            int farmerId = Convert.ToInt16(JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter)["Id"]);
+            string searchCheck = input.serchQuery;
+            //var searchproductspeclist=db.Specs  //這邊是原本用spec撈取的邏輯，目前改用下方用小產品為主的回傳
+            //    .Where(x=>x.Product.ProductTitle.Contains(searchCheck)&& x.Product.UserId== farmerId)?
+            //    .OrderBy(y=>y.Product.UpdateStateTime).AsEnumerable(); //WHERE條件要加上IsDelete==false
+            var searchproductlist = db.Products.Where(x => x.UserId == farmerId && x.ProductTitle.Contains(searchCheck))?.OrderBy(y => y.UpdateStateTime).AsEnumerable();
+            //WHERE條件要加上IsDelete==false
 
-
-                if (searchproductlist == null)
+            if (searchproductlist == null)
+            {
+                // 沒有搜尋到相關產品
+                var result = new
                 {
-                    // 沒有搜尋到相關產品
-                    var result = new
-                    {
-                        statusCode = 200,
-                        status = "success",
-                        message = "沒有結果",
-                        data = new object[] { }
-                    };
-                    return Content(HttpStatusCode.OK, result);
-                }
-                else
+                    statusCode = 200,
+                    status = "success",
+                    message = "沒有結果",
+                    data = new object[] { }
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
+            else
+            {
+                // 有搜尋到相關產品
+                var result = new
                 {
-                    // 有搜尋到相關產品
-                    var result = new
+                    statusCode = 200,
+                    status = "success",
+                    message = "取得成功",
+                    data = searchproductlist?.Select(product => new
                     {
-                        statusCode = 200,
-                        status = "success",
-                        message = "取得成功",
-                        data= searchproductlist?.Select(product => new {
-                            productId= product.Id,
-                            productTitle= product.ProductTitle,
-                            smallOriginalPrice=product.Spec.Where(x=>x.Size==false)?.FirstOrDefault().Price,
-                            smallPromotionPrice = product.Spec.Where(x => x.Size == false)?.FirstOrDefault().PromotePrice,
-                            smallStock = product.Spec.Where(x => x.Size == false)?.FirstOrDefault().Stock,
-                            productState=product.ProductState,
-                            productUpdatTime= product.UpdateStateTime?.ToString("yyyy/MM/dd"),
-                        }).ToList()
-                        //data = searchproductspeclist?.Select(product => new {      ////這邊是原本用spec撈取的邏輯，目前改用小產品為主的回傳
-                        //    productId= product.Product.Id,
-                        //    productTitle= product.Product.ProductTitle,
-                        //    productSpecId= product.Id,
-                        //    productSize=product.Size,
-                        //    originalPrice = product.Price,
-                        //    promotionPrice=product.PromotePrice,
-                        //    stock=product.Stock,
-                        //    productState= product.Product.ProductState,
-                        //    productUpdatTime= product.UpdateStateTime?.ToString("yyyy/MM/dd"),
-                        //}).ToList(),
-                    };
-                    return Content(HttpStatusCode.OK, result);
-                }
+                        productId = product.Id,
+                        productTitle = product.ProductTitle,
+                        smallOriginalPrice = product.Spec.Where(x => x.Size == false)?.FirstOrDefault().Price,
+                        smallPromotionPrice = product.Spec.Where(x => x.Size == false)?.FirstOrDefault().PromotePrice,
+                        smallStock = product.Spec.Where(x => x.Size == false)?.FirstOrDefault().Stock,
+                        productState = product.ProductState,
+                        productUpdatTime = product.UpdateStateTime?.ToString("yyyy/MM/dd"),
+                    }).ToList()
+                    //data = searchproductspeclist?.Select(product => new {      ////這邊是原本用spec撈取的邏輯，目前改用小產品為主的回傳
+                    //    productId= product.Product.Id,
+                    //    productTitle= product.Product.ProductTitle,
+                    //    productSpecId= product.Id,
+                    //    productSize=product.Size,
+                    //    originalPrice = product.Price,
+                    //    promotionPrice=product.PromotePrice,
+                    //    stock=product.Stock,
+                    //    productState= product.Product.ProductState,
+                    //    productUpdatTime= product.UpdateStateTime?.ToString("yyyy/MM/dd"),
+                    //}).ToList(),
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
             //}
             //catch
             //{
@@ -825,10 +863,18 @@ namespace FarmerPro.Controllers
             //    return Content(HttpStatusCode.OK, result);
             //}
         }
-        #endregion 
+
+        #endregion BFP-07 搜尋特定產品(小農自有，清單搜尋)
+
         //WHERE條件要加上IsDelete==false
 
         #region BFP-08 取得小農自有商品清單(小農產品總覽)
+
+        /// <summary>
+        /// BFP-08 取得小農自有商品清單(小農產品總覽)
+        /// </summary>
+        /// <param></param>
+        /// <returns>返回產品清單的 JSON 物件</returns>
         [HttpGet]
         [Route("api/farmer/productlist")]
         [JwtAuthFilter]
@@ -836,57 +882,58 @@ namespace FarmerPro.Controllers
         {
             //try
             //{
-                int farmerId = Convert.ToInt16(JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter)["Id"]);
-                //var searchproductspeclist = db.Specs   //這邊是原本用spec撈取的邏輯，目前改用下方用小產品為主的回傳
-                //    .Where(x => x.Product.UserId == farmerId)? 
-                //    .OrderBy(y => y.Product.UpdateStateTime).AsEnumerable();
+            int farmerId = Convert.ToInt16(JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter)["Id"]);
+            //var searchproductspeclist = db.Specs   //這邊是原本用spec撈取的邏輯，目前改用下方用小產品為主的回傳
+            //    .Where(x => x.Product.UserId == farmerId)?
+            //    .OrderBy(y => y.Product.UpdateStateTime).AsEnumerable();
 
-                var allproductlist = db.Products.Where(x => x.UserId == farmerId)?.OrderByDescending(y => y.UpdateStateTime).AsEnumerable();
-                //WHERE條件要加上IsDelete==false
+            var allproductlist = db.Products.Where(x => x.UserId == farmerId)?.OrderByDescending(y => y.UpdateStateTime).AsEnumerable();
+            //WHERE條件要加上IsDelete==false
 
-                if (allproductlist == null)
+            if (allproductlist == null)
+            {
+                // 沒有建立產品
+                var result = new
                 {
-                    // 沒有建立產品
-                    var result = new
-                    {
-                        statusCode = 200,
-                        status = "success",
-                        message = "沒有結果",
-                        data = new object[] { }
-                    };
-                    return Content(HttpStatusCode.OK, result);
-                }
-                else
+                    statusCode = 200,
+                    status = "success",
+                    message = "沒有結果",
+                    data = new object[] { }
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
+            else
+            {
+                // 已經有建立產品
+                var result = new
                 {
-                    // 已經有建立產品
-                    var result = new
+                    statusCode = 200,
+                    status = "success",
+                    message = "取得成功",
+                    data = allproductlist?.Select(product => new
                     {
-                        statusCode = 200,
-                        status = "success",
-                        message = "取得成功",
-                        data = allproductlist?.Select(product => new {
-                            productId = product.Id,
-                            productTitle = product.ProductTitle,
-                            smallOriginalPrice = product.Spec.Where(x => x.Size == false)?.FirstOrDefault().Price,
-                            smallPromotionPrice = product.Spec.Where(x => x.Size == false)?.FirstOrDefault().PromotePrice,
-                            smallStock = product.Spec.Where(x => x.Size == false)?.FirstOrDefault().Stock,
-                            productState = product.ProductState,
-                            productUpdatTime = product.UpdateStateTime?.ToString("yyyy/MM/dd"),
-                        }).ToList()
-                        //data = searchproductspeclist?.Select(product => new {        ////這邊是原本用spec撈取的邏輯，目前改用小產品為主的回傳
-                        //    productId = product.Product.Id,
-                        //    productTitle = product.Product.ProductTitle,
-                        //    productSpecId = product.Id,
-                        //    productSize = product.Size,
-                        //    originalPrice = product.Price,
-                        //    promotionPrice = product.PromotePrice,
-                        //    stock = product.Stock,
-                        //    productState = product.Product.ProductState,
-                        //    productUpdatTime= product.UpdateStateTime?.ToString("yyyy/MM/dd"),
-                        //}).ToList(),
-                    };
-                    return Content(HttpStatusCode.OK, result);
-                }
+                        productId = product.Id,
+                        productTitle = product.ProductTitle,
+                        smallOriginalPrice = product.Spec.Where(x => x.Size == false)?.FirstOrDefault().Price,
+                        smallPromotionPrice = product.Spec.Where(x => x.Size == false)?.FirstOrDefault().PromotePrice,
+                        smallStock = product.Spec.Where(x => x.Size == false)?.FirstOrDefault().Stock,
+                        productState = product.ProductState,
+                        productUpdatTime = product.UpdateStateTime?.ToString("yyyy/MM/dd"),
+                    }).ToList()
+                    //data = searchproductspeclist?.Select(product => new {        ////這邊是原本用spec撈取的邏輯，目前改用小產品為主的回傳
+                    //    productId = product.Product.Id,
+                    //    productTitle = product.Product.ProductTitle,
+                    //    productSpecId = product.Id,
+                    //    productSize = product.Size,
+                    //    originalPrice = product.Price,
+                    //    promotionPrice = product.PromotePrice,
+                    //    stock = product.Stock,
+                    //    productState = product.Product.ProductState,
+                    //    productUpdatTime= product.UpdateStateTime?.ToString("yyyy/MM/dd"),
+                    //}).ToList(),
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
             //}
             //catch
             //{
@@ -900,10 +947,18 @@ namespace FarmerPro.Controllers
             //    return Content(HttpStatusCode.OK, result);
             //}
         }
-        #endregion
+
+        #endregion BFP-08 取得小農自有商品清單(小農產品總覽)
+
         //WHERE條件要加上IsDelete==false
 
         #region BFP-09 取得小農自有商品清單(用於直播設定產品)
+
+        /// <summary>
+        /// BFP-09 取得小農自有商品清單(用於直播設定產品)
+        /// </summary>
+        /// <param></param>
+        /// <returns>返回產品清單的 JSON 物件</returns>
         [HttpGet]
         [Route("api/farmer/live/productlist")]
         [JwtAuthFilter]
@@ -913,9 +968,8 @@ namespace FarmerPro.Controllers
             {
                 int farmerId = Convert.ToInt16(JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter)["Id"]);
                 var searchproductlist = db.Products
-                    .Where(x => x.UserId == farmerId&&x.ProductState==true)? //WHERE條件要加上IsDelete==false
+                    .Where(x => x.UserId == farmerId && x.ProductState == true)? //WHERE條件要加上IsDelete==false
                     .OrderBy(y => y.UpdateStateTime).AsEnumerable();
-
 
                 if (searchproductlist == null)
                 {
@@ -937,7 +991,8 @@ namespace FarmerPro.Controllers
                         statusCode = 200,
                         status = "success",
                         message = "取得成功",
-                        data = searchproductlist?.Select(product => new {
+                        data = searchproductlist?.Select(product => new
+                        {
                             productId = product.Id,
                             productTitle = product.ProductTitle,
                         }).ToList(),
@@ -957,10 +1012,9 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-        #endregion 
+
+        #endregion BFP-09 取得小農自有商品清單(用於直播設定產品)
+
         //WHERE條件要加上IsDelete==false
-
-
-
     }
 }
