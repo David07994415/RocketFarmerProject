@@ -292,7 +292,8 @@ namespace FarmerPro.Controllers
                 {
                     ClientSecrets = clientSecrets
                 });
-                string redirecturi = @"https://sun-live.vercel.app/auth/login";  //這邊前端要改，後端console要加入
+                //string redirecturi = @"https://sun-live.vercel.app/auth/login";  //這邊前端要改，後端console要加入
+                string redirecturi = @"http://localhost:3000/dashboard/live/verify";  //這邊前端要改，後端console要加入
                 // 創建 AuthorizationCodeRequestUrl
                 var authorizationUrl = flow.CreateAuthorizationCodeRequest(redirecturi);
 
@@ -358,7 +359,8 @@ namespace FarmerPro.Controllers
             });
 
 
-            string redirecturi = @"https://sun-live.vercel.app/auth/login"; //這邊前端要改，後端console要加入
+            //string redirecturi = @"https://sun-live.vercel.app/auth/login"; //這邊前端要改，後端console要加入
+            string redirecturi = @"http://localhost:3000/dashboard/live/verify";  //這邊前端要改，後端console要加入
             string decodedCode = HttpUtility.UrlDecode(inputs.code);
             var tokenResponse = await flow.ExchangeCodeForTokenAsync("user", decodedCode, redirecturi, CancellationToken.None);
 
