@@ -15,15 +15,22 @@ using System.Web.Http.Results;
 using Konscious.Security.Cryptography;
 using System.Security.Cryptography;
 using System.Text;
+using NSwag.Annotations;
 
 namespace FarmerPro.Controllers
 {
+    [OpenApiTag("LoginForget", Description = "使用者忘記密碼")]
     public class LoginForgetController : ApiController
     {
         private FarmerProDB db = new FarmerProDB();
 
         #region FCS-4 忘記密碼(通知後端)
 
+        /// <summary>
+        /// FCS-4 忘記密碼(通知後端)
+        /// </summary>
+        /// <param name="input">帳號(Email)</param>
+        /// <returns></returns>
         [HttpPost]
         [Route("api/login/forget")]
         public IHttpActionResult ForgetPasswordSendMail([FromBody] ForgetPasswordAccount input)
@@ -89,6 +96,11 @@ namespace FarmerPro.Controllers
 
         #region FCS-5 重設密碼
 
+        /// <summary>
+        /// FCS-5 重設密碼
+        /// </summary>
+        /// <param name="input">信件網址回傳資料</param>
+        /// <returns></returns>
         [HttpPost]
         [Route("api/login/forget/reset")]
         public IHttpActionResult ForgetPasswordReset([FromBody] ForgetPasswordReset input)
@@ -232,6 +244,9 @@ namespace FarmerPro.Controllers
         }
     }
 
+    /// <summary>
+    /// 忘記密碼使用者帳號
+    /// </summary>
     public class ForgetPasswordAccount
     {
         [Required]
@@ -240,6 +255,9 @@ namespace FarmerPro.Controllers
         public string account { get; set; }
     }
 
+    /// <summary>
+    /// 忘記密碼請求參數物件
+    /// </summary>
     public class ForgetPasswordReset
     {
         [Required]
