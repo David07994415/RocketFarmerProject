@@ -1,5 +1,6 @@
 ﻿using FarmerPro.Models;
 using FarmerPro.Securities;
+using NSwag.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,12 +10,18 @@ using System.Web.Http;
 
 namespace FarmerPro.Controllers
 {
+    [OpenApiTag("Order", Description = "訂單及金流")]
     public class UserOrderController : ApiController
     {
         private FarmerProDB db = new FarmerProDB();
 
-        #region BGO-1 取得消費者自有訂單清單
+        #region BGO-01 取得消費者自有訂單清單
 
+        /// <summary>
+        /// BGO-01 取得消費者自有訂單清單
+        /// </summary>
+        /// <param></param>
+        /// <returns>返回消費者訂單清單的 JSON 物件</returns>
         [HttpGet]
         [Route("api/user/orderlist")]
         [JwtAuthFilter]
@@ -86,6 +93,6 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion BGO-1 取得消費者自有訂單清單
+        #endregion BGO-01 取得消費者自有訂單清單
     }
 }

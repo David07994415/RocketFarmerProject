@@ -29,7 +29,7 @@ namespace FarmerPro.Controllers
         /// <summary>
         /// FCW-01 創造並加入特定聊天室(取得聊天訊息)
         /// </summary>
-        /// <param name="input">訊息接收者Id回傳資料</param>
+        /// <param name="input">提供訊息接收者Id</param>
         /// <returns>返回聊天室的 JSON 物件</returns>
         [HttpPost]
         //[Route("api/chats/joinroom/{senderId}/{receiverId}")] //測試用途
@@ -177,7 +177,7 @@ namespace FarmerPro.Controllers
         /// <summary>
         /// FCW-02 傳送並存取聊天資訊
         /// </summary>
-        /// <param name="input">聊天室Id、訊息發送者Id、訊息內容回傳資料</param>
+        /// <param name="input">提供聊天室的 JSON 物件</param>
         /// <returns>返回聊天室的 JSON 物件</returns>
         [HttpPost]
         [Route("api/chats/roommessages")]
@@ -268,10 +268,10 @@ namespace FarmerPro.Controllers
 
         #endregion FCW-02 傳送並存取聊天資訊
 
-        #region FCW-03 取得聊天室清單(要回傳小農ID給前端)
+        #region FCW-03 取得聊天室清單(要回傳小農Id給前端)
 
         /// <summary>
-        /// FCW-03 取得聊天室清單(要回傳小農ID給前端)
+        /// FCW-03 取得聊天室清單(要回傳小農Id給前端)
         /// </summary>
         /// <param></param>
         /// <returns>返回聊天室的 JSON 物件</returns>
@@ -372,7 +372,7 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion FCW-03 取得聊天室清單(要回傳小農ID給前端)
+        #endregion FCW-03 取得聊天室清單(要回傳小農Id給前端)
 
         //#region FCW-04 傳送單筆直播聊天資訊
 
@@ -469,7 +469,7 @@ namespace FarmerPro.Controllers
         #region FCW-07 取得單一使用者未讀訊息通知
 
         /// <summary>
-        /// FCW-05 取得使用者聊天室個人資訊
+        /// FCW-07 取得單一使用者未讀訊息通知
         /// </summary>
         /// <param></param>
         /// <returns>返回未讀通知</returns>
@@ -605,12 +605,18 @@ namespace FarmerPro.Controllers
         #endregion FCW-07 取得單一使用者未讀訊息通知
     }
 
+    /// <summary>
+    /// 訊息接收者Id
+    /// </summary>
     public class userChatroomcheck
     {
         [Display(Name = "使用者Id=>接收訊息者")]
         public int receiverId { get; set; }
     }
 
+    /// <summary>
+    /// 訊息發送者Id及資訊
+    /// </summary>
     public class ChatSendMessageCheck
     {
         [Display(Name = "chatroom")]
@@ -624,6 +630,9 @@ namespace FarmerPro.Controllers
         public string message { get; set; }
     }
 
+    /// <summary>
+    /// 訊息
+    /// </summary>
     public class LiveMessagecheck
     {
         [Display(Name = "訊息者")]

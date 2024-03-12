@@ -20,10 +20,10 @@ namespace FarmerPro.Controllers
     {
         private FarmerProDB db = new FarmerProDB();
 
-        #region FGC-2 取得購物車清單
+        #region FGC-02 取得購物車清單
 
         /// <summary>
-        /// FGC-2 取得購物車清單
+        /// FGC-02 取得購物車清單
         /// </summary>
         /// <param></param>
         /// <returns>返回購物車清單的 JSON 物件</returns>
@@ -187,12 +187,12 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion FGC-2 取得購物車清單
+        #endregion FGC-02 取得購物車清單
 
-        #region FGC-1 加入購物車(要補上購物車數量欄位)
+        #region FGC-01 加入購物車(要補上購物車數量欄位)
 
         /// <summary>
-        /// FGC-1 加入購物車(要補上購物車數量欄位)
+        /// FGC-01 加入購物車(要補上購物車數量欄位)
         /// </summary>
         /// <param name="input">商品規格、數量、直播Id回傳資料</param>
         /// <returns>返回購物車清單的 JSON 物件</returns>
@@ -332,12 +332,12 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion FGC-1 加入購物車(要補上購物車數量欄位)
+        #endregion FGC-01 加入購物車(要補上購物車數量欄位)
 
-        #region FGC-3 修改商品數量
+        #region FGC-03 修改商品數量
 
         /// <summary>
-        /// FGC-3 修改商品數量
+        /// FGC-03 修改商品數量
         /// </summary>
         /// <param name="input">商品規格、數量、直播Id回傳資料</param>
         /// <returns>返回購物車清單的 JSON 物件</returns>
@@ -552,12 +552,12 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion FGC-3 修改商品數量
+        #endregion FGC-03 修改商品數量
 
-        #region FGC-4 修改商品規格
+        #region FGC-04 修改商品規格
 
         /// <summary>
-        /// FGC-4 修改商品規格
+        /// FGC-04 修改商品規格
         /// </summary>
         /// <param name="input">商品規格、數量、直播Id回傳資料</param>
         /// <returns>返回購物車清單的 JSON 物件</returns>
@@ -761,12 +761,12 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion FGC-4 修改商品規格
+        #endregion FGC-04 修改商品規格
 
-        #region FGC-5 刪除特定商品
+        #region FGC-05 刪除特定商品
 
         /// <summary>
-        /// FGC-5 刪除特定商品
+        /// FGC-05 刪除特定商品
         /// </summary>
         /// <param name="input">商品規格、數量、直播Id回傳資料</param>
         /// <returns>返回購物車清單的 JSON 物件</returns>
@@ -905,7 +905,7 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion FGC-5 刪除特定商品
+        #endregion FGC-05 刪除特定商品
 
         /// <summary>
         /// 取得購物車產品資訊
