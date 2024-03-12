@@ -18,15 +18,22 @@ using System.Web;
 using System.Web.Http;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
+using NSwag.Annotations;
 
 namespace FarmerPro.Controllers
 {
+    [OpenApiTag("UserInfo", Description = "會員資料")]
     public class UserInfoController : ApiController
     {
         private FarmerProDB db = new FarmerProDB();
 
-        #region BGI-1 上傳會員頭貼圖片(單張，及時渲染，有PUT功能)
+        #region BGI-01 上傳會員頭貼圖片(單張，及時渲染，有PUT功能)
 
+        /// <summary>
+        /// BGI-01 上傳會員頭貼圖片(單張，及時渲染，有PUT功能)
+        /// </summary>
+        /// <param></param>
+        /// <returns>返回一般會員頭貼</returns>
         [HttpPost]
         [Route("api/user/pic")]
         [JwtAuthFilter]
@@ -192,10 +199,15 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion BGI-1 上傳會員頭貼圖片(單張，及時渲染，有PUT功能)
+        #endregion BGI-01 上傳會員頭貼圖片(單張，及時渲染，有PUT功能)
 
-        #region BGI-2 修改會員個人資訊頁
+        #region BGI-02 修改會員個人資訊頁
 
+        /// <summary>
+        /// BGI-02 修改會員個人資訊頁
+        /// </summary>
+        /// <param name="input">提供一般會員個人資訊的 JSON 物件</param>
+        /// <returns>返回一般會員個人資訊的 JSON 物件</returns>
         [HttpPost]
         [Route("api/user/info")]
         [JwtAuthFilter]
@@ -265,10 +277,15 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion BGI-2 修改會員個人資訊頁
+        #endregion BGI-02 修改會員個人資訊頁
 
-        #region BGI-3 取得會員個人資訊頁
+        #region BGI-03 取得會員個人資訊頁
 
+        /// <summary>
+        /// BGI-03 取得會員個人資訊頁
+        /// </summary>
+        /// <param></param>
+        /// <returns>返回一般會員個人資訊的 JSON 物件</returns>
         [HttpGet]
         [Route("api/user/info")]
         [JwtAuthFilter]
@@ -321,8 +338,11 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion BGI-3 取得會員個人資訊頁
+        #endregion BGI-03 取得會員個人資訊頁
 
+        /// <summary>
+        /// 一般會員資訊
+        /// </summary>
         public class UserInfoClass
         {
             [MaxLength(500)]

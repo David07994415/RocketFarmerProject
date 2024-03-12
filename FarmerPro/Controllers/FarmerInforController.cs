@@ -208,7 +208,7 @@ namespace FarmerPro.Controllers
         /// <summary>
         /// BFI-02 修改小農個人資訊頁
         /// </summary>
-        /// <param name="input">小農暱稱、電話、理念、描述之回傳資料</param>
+        /// <param name="input">提供小農個人資訊的 JSON 物件</param>
         /// <returns>返回小農個人資訊的 JSON 物件</returns>
         [HttpPost]
         [Route("api/farmer/info")]
