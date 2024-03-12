@@ -18,14 +18,22 @@ using System.Web;
 using System.Web.Http;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
+using NSwag.Annotations;
 
 namespace FarmerPro.Controllers
 {
+    [OpenApiTag("UserInfo", Description = "會員資料")]
     public class FarmerInforController : ApiController
     {
         private FarmerProDB db = new FarmerProDB();
 
         #region BFI-01 上傳小農頭貼圖片(單張，及時渲染，有PUT功能)
+
+        /// <summary>
+        /// BFI-01 上傳小農頭貼圖片(單張，及時渲染，有PUT功能)
+        /// </summary>
+        /// <param></param>
+        /// <returns>返回小農頭貼</returns>
         [HttpPost]
         [Route("api/farmer/pic")]
         [JwtAuthFilter]
@@ -35,7 +43,7 @@ namespace FarmerPro.Controllers
             var jwtObject = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
             int FarmerId = (int)jwtObject["Id"];
 
-            var userExist = db.Users.Where(x=>x.Id== FarmerId)?.FirstOrDefault();
+            var userExist = db.Users.Where(x => x.Id == FarmerId)?.FirstOrDefault();
 
             // 檢查請求是否包含 multipart/form-data.
             if (!Request.Content.IsMimeMultipartContent())
@@ -101,7 +109,7 @@ namespace FarmerPro.Controllers
                         string fileType = fileNameData.Remove(0, fileNameData.LastIndexOf('.')); // .jpg
 
                         // 定義檔案名稱
-                        string fileName = FarmerId.ToString()  + DateTime.Now.ToString("yyyyMMddHHmmssfff") + fileType;
+                        string fileName = FarmerId.ToString() + DateTime.Now.ToString("yyyyMMddHHmmssfff") + fileType;
 
                         // 儲存圖片
                         var fileBytes = await content.ReadAsByteArrayAsync();
@@ -121,7 +129,6 @@ namespace FarmerPro.Controllers
                         // 載入原始圖片，調整圖片大小
                         using (var image = Image.Load<Rgba32>(outputPath))
                         {
-
                             // 設定最大檔案大小 (2MB)
                             long maxFileSizeInBytes = 2 * 1024 * 1024;
 
@@ -134,7 +141,6 @@ namespace FarmerPro.Controllers
                                 // 檢查檔案大小是否超過限制
                                 if (currentFileSize > maxFileSizeInBytes)
                                 {
-
                                     // 如果超過，可能需要進一步調整，或者進行其他處理
                                     // 這裡僅僅是一個簡單的示例，實際應用可能需要更複雜的處理邏輯
                                     //// 設定裁切尺寸
@@ -147,7 +153,6 @@ namespace FarmerPro.Controllers
                                         Size = new Size(MaxWidth, MaxHeight),
                                         Mode = ResizeMode.Max
                                     }));
-
                                 }
                                 else { }
                             }
@@ -164,7 +169,7 @@ namespace FarmerPro.Controllers
                     userExist.Photo = imglList[1];
                     //可以補上照片名稱的資料庫欄位
                     db.SaveChanges();
-        
+
                     //撈取使用者相片資料庫
                     var checkUserInfor = db.Users.Where(x => x.Id == FarmerId)?.FirstOrDefault();
 
@@ -195,9 +200,16 @@ namespace FarmerPro.Controllers
                 }
             }
         }
-        #endregion
+
+        #endregion BFI-01 上傳小農頭貼圖片(單張，及時渲染，有PUT功能)
 
         #region BFI-02 修改小農個人資訊頁
+
+        /// <summary>
+        /// BFI-02 修改小農個人資訊頁
+        /// </summary>
+        /// <param name="input">小農暱稱、電話、理念、描述之回傳資料</param>
+        /// <returns>返回小農個人資訊的 JSON 物件</returns>
         [HttpPost]
         [Route("api/farmer/info")]
         [JwtAuthFilter]
@@ -232,7 +244,6 @@ namespace FarmerPro.Controllers
                     }
                     else
                     {
-
                         getUserInfor.NickName = input.nickName;
                         getUserInfor.Phone = input.phone;
                         getUserInfor.Vision = input.vision;
@@ -272,9 +283,16 @@ namespace FarmerPro.Controllers
                 }
             }
         }
-        #endregion 
+
+        #endregion BFI-02 修改小農個人資訊頁
 
         #region BFI-03 取得小農個人資訊頁
+
+        /// <summary>
+        /// BFI-03 取得小農個人資訊頁
+        /// </summary>
+        /// <param></param>
+        /// <returns>返回小農個人資訊的 JSON 物件</returns>
         [HttpGet]
         [Route("api/farmer/info")]
         [JwtAuthFilter]
@@ -327,10 +345,13 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-        #endregion 
 
+        #endregion BFI-03 取得小農個人資訊頁
     }
 
+    /// <summary>
+    /// 小農會員資訊
+    /// </summary>
     public class CheckFarmerInfor
     {
         [Required]
@@ -350,5 +371,4 @@ namespace FarmerPro.Controllers
         [Display(Name = "小農介紹")]
         public string description { get; set; }
     }
-
 }
