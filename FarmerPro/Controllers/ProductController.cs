@@ -1,6 +1,7 @@
 ﻿using FarmerPro.Models;
 using FarmerPro.Models.ViewModel;
 using Newtonsoft.Json;
+using NSwag.Annotations;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -16,16 +17,18 @@ using System.Web.Http.Results;
 
 namespace FarmerPro.Controllers
 {
+    [OpenApiTag("Product", Description = "商品")]
     public class ProductController : ApiController
     {
         private FarmerProDB db = new FarmerProDB();
 
+        #region FGP-01 取得所有商品
+
         /// <summary>
-        /// 取得所有商品
+        /// FGP-01 取得所有商品
         /// </summary>
-
-        #region FGP-1 取得所有產品
-
+        /// <param></param>
+        /// <returns>返回所有商品的 JSON 物件</returns>
         [HttpGet]
         //自定義路由
         [Route("api/product/all")]
@@ -91,10 +94,15 @@ namespace FarmerPro.Controllers
             //}
         }
 
-        #endregion FGP-1 取得所有產品
+        #endregion FGP-01 取得所有商品
 
-        #region FGP-2 取得live產品、熱銷產品、特價促銷產品、水果產品、蔬菜產品
+        #region FGP-02 取得live商品、熱銷商品、特價促銷商品、水果商品、蔬菜商品
 
+        /// <summary>
+        /// FGP-02 取得live商品、熱銷商品、特價促銷商品、水果商品、蔬菜商品
+        /// </summary>
+        /// <param></param>
+        /// <returns>返回特定筆數商品的 JSON 物件</returns>
         [HttpGet]
         //自定義路由
         [Route("api/product")]
@@ -249,10 +257,15 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion FGP-2 取得live產品、熱銷產品、特價促銷產品、水果產品、蔬菜產品
+        #endregion FGP-02 取得live商品、熱銷商品、特價促銷商品、水果商品、蔬菜商品
 
-        #region FGP-3 取得特定商品細節資訊(包含小農介紹、小農產品推薦4筆)
+        #region FGP-03 取得特定商品細節資訊(包含小農介紹、小農商品推薦4筆)
 
+        /// <summary>
+        /// FGP-03 取得特定商品細節資訊(包含小農介紹、小農商品推薦4筆)
+        /// </summary>
+        /// <param name="productId">提供商品Id</param>
+        /// <returns>返回特定商品的 JSON 物件</returns>
         [HttpGet]
         //自定義路由
         [Route("api/product/{productId}")]
@@ -375,10 +388,15 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion FGP-3 取得特定商品細節資訊(包含小農介紹、小農產品推薦4筆)
+        #endregion FGP-03 取得特定商品細節資訊(包含小農介紹、小農商品推薦4筆)
 
-        #region FCI-1 搜尋特定產品(input)
+        #region FCI-01 搜尋特定商品(input)
 
+        /// <summary>
+        /// FCI-01 搜尋特定商品(input)
+        /// </summary>
+        /// <param name="input">提供商品名稱</param>
+        /// <returns>返回搜尋商品的 JSON 物件</returns>
         [HttpPost]
         //自定義路由
         [Route("api/product/search")]
@@ -448,9 +466,12 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion FCI-1 搜尋特定產品(input)
+        #endregion FCI-01 搜尋特定商品(input)
     }
 
+    /// <summary>
+    /// 搜尋商品名
+    /// </summary>
     public class SerchProduct
     {
         [Display(Name = "搜尋")]
