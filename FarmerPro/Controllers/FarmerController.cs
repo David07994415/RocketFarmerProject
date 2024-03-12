@@ -37,7 +37,7 @@ namespace FarmerPro.Controllers
         /// <summary>
         /// BFP-01 取得小農單一商品資料(有包含相片)
         /// </summary>
-        /// <param name="Id">小農Id</param>
+        /// <param name="Id">提供小農Id</param>
         /// <returns>返回單一商品資料的 JSON 物件</returns>
         [HttpGet]
         [Route("api/farmer/product/{Id}")]
@@ -136,7 +136,7 @@ namespace FarmerPro.Controllers
         /// <summary>
         /// BFP-02 新增小農單一商品資料(不包含上傳相片)
         /// </summary>
-        /// <param name="CreateProduct">商品資料</param>
+        /// <param name="CreateProduct">提供商品資料的 JSON 物件</param>
         /// <returns>返回單一商品資料的 JSON 物件</returns>
         [HttpPost]
         [Route("api/farmer/product")]
@@ -278,7 +278,7 @@ namespace FarmerPro.Controllers
         /// <summary>
         /// BFP-03 上傳回拋小農單一商品圖片(多張，及時渲染，沒有PUT功能)
         /// </summary>
-        /// <param name="productId">商品Id</param>
+        /// <param name="productId">提供商品Id</param>
         /// <returns>返回商品圖片</returns>
         [HttpPost]
         [Route("api/farmer/product/pic/{productId}")]
@@ -500,8 +500,8 @@ namespace FarmerPro.Controllers
         /// <summary>
         /// BFP-04 修改小農單一商品(會回傳圖片)
         /// </summary>
-        /// <param name="productId">商品Id</param>
-        /// <param name="input">商品資料</param>
+        /// <param name="productId">提供商品Id</param>
+        /// <param name="input">提供單一商品資料的 JSON 物件</param>
         /// <returns>返回單一商品資料的 JSON 物件</returns>
         [HttpPut]
         [Route("api/farmer/product/{productId}")]
@@ -716,8 +716,8 @@ namespace FarmerPro.Controllers
         /// <summary>
         /// BFP-06 刪除小農單一商品圖片(使用硬刪除)
         /// </summary>
-        /// <param name="photoId">商品相片Id</param>
-        /// <returns>返回刪除狀態</returns>
+        /// <param name="photoId">提供商品相片Id</param>
+        /// <returns>返回刪除商品圖片狀態</returns>
         [HttpDelete]
         [Route("api/farmer/product/pic/{photoId}")]
         [JwtAuthFilter]
@@ -789,7 +789,7 @@ namespace FarmerPro.Controllers
         /// <summary>
         /// BFP-07 搜尋特定產品(小農自有，清單搜尋)
         /// </summary>
-        /// <param name="input">商品Title</param>
+        /// <param name="input">提供商品名稱</param>
         /// <returns>返回特定產品資料的 JSON 物件</returns>
         [HttpPost]
         [Route("api/farmer/productlist/search")]

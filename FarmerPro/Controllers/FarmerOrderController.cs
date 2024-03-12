@@ -2,6 +2,7 @@
 using FarmerPro.Securities;
 using MailKit.Search;
 using Microsoft.AspNet.SignalR;
+using NSwag.Annotations;
 using Org.BouncyCastle.Asn1.X509;
 using System;
 using System.Collections.Generic;
@@ -13,12 +14,18 @@ using System.Web.Http;
 
 namespace FarmerPro.Controllers
 {
+    [OpenApiTag("Order", Description = "訂單")]
     public class FarmerOrderController : ApiController
     {
         private FarmerProDB db = new FarmerProDB();
 
-        #region BFO-1 取得小農訂單清單
+        #region BFO-01 取得小農訂單清單
 
+        /// <summary>
+        /// BFO-01 取得小農訂單清單
+        /// </summary>
+        /// <param></param>
+        /// <returns>返回小農訂單清單的 JSON 物件</returns>
         [HttpGet]
         [Route("api/farmer/orderlist")]
         [JwtAuthFilter]
@@ -94,10 +101,15 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion BFO-1 取得小農訂單清單
+        #endregion BFO-01 取得小農訂單清單
 
-        #region BFO-2 修改小農單一訂單狀態
+        #region BFO-02 修改小農單一訂單狀態
 
+        /// <summary>
+        /// BFO-02 修改小農單一訂單狀態
+        /// </summary>
+        /// <param name="orderId">提供訂單Id</param>
+        /// <returns>返回小農單一訂單狀態</returns>
         [HttpPatch]
         [Route("api/farmer/order/{orderId}/toggle")]
         [JwtAuthFilter]
@@ -171,10 +183,15 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion BFO-2 修改小農單一訂單狀態
+        #endregion BFO-02 修改小農單一訂單狀態
 
-        #region BFO-3 搜尋特定訂單(小農自有，搜尋清單內含產品)
+        #region BFO-03 搜尋特定訂單(小農自有，搜尋清單內含商品)
 
+        /// <summary>
+        /// BFO-03 搜尋特定訂單(小農自有，搜尋清單內含商品)
+        /// </summary>
+        /// <param name="input">提供商品名稱</param>
+        /// <returns>返回小農特定訂單的 JSON 物件</returns>
         [HttpPost]
         [Route("api/farmer/order/search")]
         [JwtAuthFilter]
@@ -267,8 +284,11 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion BFO-3 搜尋特定訂單(小農自有，搜尋清單內含產品)
+        #endregion BFO-03 搜尋特定訂單(小農自有，搜尋清單內含商品)
 
+        /// <summary>
+        /// 搜尋商品名
+        /// </summary>
         public class SerchFarmerOrder
         {
             [Display(Name = "搜尋")]
