@@ -19,18 +19,18 @@ using NSwag.Annotations;
 
 namespace FarmerPro.Controllers
 {
-    [OpenApiTag("LoginForget", Description = "使用者忘記密碼")]
+    [OpenApiTag("Login", Description = "無密碼登入及忘記密碼")]
     public class LoginForgetController : ApiController
     {
         private FarmerProDB db = new FarmerProDB();
 
-        #region FCS-4 忘記密碼(通知後端)
+        #region FCS-04 忘記密碼(通知後端)
 
         /// <summary>
-        /// FCS-4 忘記密碼(通知後端)
+        /// FCS-04 忘記密碼(通知後端)
         /// </summary>
-        /// <param name="input">帳號(Email)</param>
-        /// <returns></returns>
+        /// <param name="input">提供忘記密碼者之帳號 (Email)</param>
+        /// <returns>返回信件傳送狀態</returns>
         [HttpPost]
         [Route("api/login/forget")]
         public IHttpActionResult ForgetPasswordSendMail([FromBody] ForgetPasswordAccount input)
@@ -92,14 +92,14 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion FCS-4 忘記密碼(通知後端)
+        #endregion FCS-04 忘記密碼(通知後端)
 
-        #region FCS-5 重設密碼
+        #region FCS-05 重設密碼
 
         /// <summary>
-        /// FCS-5 重設密碼
+        /// FCS-05 重設密碼
         /// </summary>
-        /// <param name="input">信件網址回傳資料</param>
+        /// <param name="input">提供忘記密碼的 JSON 物件</param>
         /// <returns></returns>
         [HttpPost]
         [Route("api/login/forget/reset")]
@@ -196,7 +196,7 @@ namespace FarmerPro.Controllers
             return argon2.GetBytes(16);
         }
 
-        #endregion FCS-5 重設密碼
+        #endregion FCS-05 重設密碼
 
         //信件寄送方法
         public static void sendGmail(string account, string name, string link)
