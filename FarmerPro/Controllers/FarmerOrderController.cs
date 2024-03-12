@@ -14,7 +14,7 @@ using System.Web.Http;
 
 namespace FarmerPro.Controllers
 {
-    [OpenApiTag("Order", Description = "訂單")]
+    [OpenApiTag("Order", Description = "訂單及金流")]
     public class FarmerOrderController : ApiController
     {
         private FarmerProDB db = new FarmerProDB();

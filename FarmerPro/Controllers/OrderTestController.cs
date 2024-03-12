@@ -2,6 +2,7 @@
 using FarmerPro.Securities;
 using MailKit.Search;
 using Microsoft.AspNet.SignalR;
+using NSwag.Annotations;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Asn1.X9;
 using Owin;
@@ -15,12 +16,18 @@ using System.Web.Razor.Parser.SyntaxTree;
 
 namespace FarmerPro.Controllers
 {
+    [OpenApiTag("Order", Description = "訂單及金流")]
     public class OrderTestController : ApiController
     {
         private FarmerProDB db = new FarmerProDB();
 
-        #region BFO-4 取得小農各自訂單清單
+        #region BFO-04 取得小農各自訂單清單(拆各別小農)
 
+        /// <summary>
+        /// BFO-04 取得小農各自訂單清單(拆個別小農)
+        /// </summary>
+        /// <param></param>
+        /// <returns>返回小農訂單清單的 JSON 物件</returns>
         [HttpGet]
         [Route("api/farmer/orderlistNew")]
         [JwtAuthFilter]
@@ -131,10 +138,15 @@ namespace FarmerPro.Controllers
 
         //userId==2 的商品，prom的價格
 
-        #endregion BFO-4 取得小農各自訂單清單
+        #endregion BFO-04 取得小農各自訂單清單(拆各別小農)
 
-        #region BFO-5 修改小農單一訂單狀態
+        #region BFO-05 修改小農單一訂單狀態
 
+        /// <summary>
+        /// BFO-05 修改小農單一訂單狀態 (拆各別小農)
+        /// </summary>
+        /// <param name="orderFarmerId">提供訂單Id</param>
+        /// <returns>返回小農單一訂單狀態</returns>
         [HttpPatch]
         [Route("api/farmer/order/{orderId}/toggleNew")]
         [JwtAuthFilter]
@@ -224,6 +236,6 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion BFO-5 修改小農單一訂單狀態
+        #endregion BFO-05 修改小農單一訂單狀態
     }
 }
