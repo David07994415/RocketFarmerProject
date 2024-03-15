@@ -19,6 +19,14 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Web;
 using System.Security.Principal;
+using Fido2NetLib;
+using static Fido2NetLib.Fido2;
+using Microsoft.Extensions.DependencyInjection;
+using Fido2NetLib.Objects;
+using System.Security;
+using Newtonsoft.Json.Linq;
+using System.Security.Claims;
+using System.Web.Security;
 
 namespace FarmerPro.Controllers
 {
@@ -26,6 +34,23 @@ namespace FarmerPro.Controllers
     {
         //第一步: 取得資料來源
         private FarmerProDB db = new FarmerProDB();
+
+        private IFido2 _fido2;
+        public UserController()
+        {
+            Fido2Configuration config = new Fido2Configuration();
+            config.ServerDomain = "localhost";//System.Configuration.ConfigurationManager.AppSettings["serverDomain"];
+            config.ServerName = "FIDO2 Test";
+            config.Origins = new HashSet<string>(new[] { @"http://localhost:44364" }); //這邊要改
+            config.TimestampDriftTolerance = int.Parse("300000");
+            // < add key = "serverDomain" value = "localhost" />
+            //< add key = "origins" value = "http://localhost:52363" />
+            //< add key = "timestampDriftTolerance" value = "300000" />
+
+            _fido2 = new Fido2(config);
+            //_fido2 = WebApiApplication.ServiceLocator.GetService<IFido2>();
+        }
+
 
         //第二步: 使用的CRUD方法+簡易判斷的方法
         //建立 POST: api/User
@@ -292,8 +317,8 @@ namespace FarmerPro.Controllers
                 {
                     ClientSecrets = clientSecrets
                 });
-                //string redirecturi = @"https://sun-live.vercel.app/auth/login";  //這邊前端要改，後端console要加入
-                string redirecturi = @"http://localhost:3000/dashboard/live/verify";  //這邊前端要改，後端console要加入
+                string redirecturi = @"https://sun-live.vercel.app/auth/verify";  //這邊前端要改，後端console要加入
+                //string redirecturi = @"http://localhost:3000/auth/verify";  //這邊前端要改，後端console要加入
                 // 創建 AuthorizationCodeRequestUrl
                 var authorizationUrl = flow.CreateAuthorizationCodeRequest(redirecturi);
 
@@ -359,8 +384,8 @@ namespace FarmerPro.Controllers
             });
 
 
-            //string redirecturi = @"https://sun-live.vercel.app/auth/login"; //這邊前端要改，後端console要加入
-            string redirecturi = @"http://localhost:3000/dashboard/live/verify";  //這邊前端要改，後端console要加入
+            string redirecturi = @"https://sun-live.vercel.app/auth/verify"; //這邊前端要改，後端console要加入
+            //string redirecturi = @"http://localhost:3000/auth/verify";  //這邊前端要改，後端console要加入
             string decodedCode = HttpUtility.UrlDecode(inputs.code);
             var tokenResponse = await flow.ExchangeCodeForTokenAsync("user", decodedCode, redirecturi, CancellationToken.None);
 
@@ -455,7 +480,7 @@ namespace FarmerPro.Controllers
                         };
                         return Content(HttpStatusCode.OK, ResultLogin);
                     }
-                    else 
+                    else
                     {
                         var result = new
                         {
@@ -491,11 +516,309 @@ namespace FarmerPro.Controllers
         }
         #endregion
 
+        #region FCS-9  回傳使用者證明(Attestation)
+        //[Authorize]
+        [HttpPost]
+        [Route("api/login/attestation")]
+        public async Task<IHttpActionResult> AuthnAttestation(AuthnUser inputs)
+        {
+
+            //try
+            //{
+
+            //var username = this.User.Identity.Name;  // USE   [Authorize]
+            //var displayName = username;     // USE   [Authorize]
+
+            var username = inputs.inputName;
+            var displayName = username;
+
+            string UserAccount = inputs.inputName;
+            bool IsRegister = inputs.isRegister;
+            if (IsRegister == true)  // 註冊類型
+            {
+                //先確認使用者帳號是否已經在資料庫中
+                var IsUser = db.Users.Where(x => x.Account == UserAccount)?.FirstOrDefault();
+                if (IsUser != null)  //使用者已經在帳戶中
+                {
+                    var result = new
+                    {
+                        statusCode = 401,
+                        status = "error",
+                        message = "註冊失敗，帳號已存在",
+                    };
+                    return Content(HttpStatusCode.OK, result);
+                }
+                else  // 使用者帳號沒有存在，進行FIDO註冊
+                {
+                    var InsertUser = new User
+                    {
+                        Account = UserAccount,
+                        Category = UserCategory.一般會員 //先固定
+                    };
+                    db.Users.Add(InsertUser);
+                    db.SaveChanges();
+                    int userId = InsertUser.Id;
+                    byte[] userIdBytes = BitConverter.GetBytes(userId);
+
+                    // 2. Get user existing keys by username
+                    //var existingKeys = this.db.GetCredentialsByUser(user).Select(c => new PublicKeyCredentialDescriptor(c.DescriptorId)).ToList();
+                    var existingKeys = new List<PublicKeyCredentialDescriptor>();
+
+
+                    // 3. Create options
+                    var authenticatorSelection = new AuthenticatorSelection
+                    {
+                        ResidentKey = ResidentKeyRequirement.Required,
+                        UserVerification = UserVerificationRequirement.Preferred,
+                        //AuthenticatorAttachment = AuthenticatorAttachment.CrossPlatform
+                    };
+                    var exts = new AuthenticationExtensionsClientInputs() { };
+
+                    var options =
+                        _fido2.RequestNewCredential(
+                            new Fido2User()
+                            {
+                                DisplayName = displayName,
+                                Id = userIdBytes,
+                                Name = username
+                            },
+                            existingKeys,
+                            authenticatorSelection,
+                            AttestationConveyancePreference.None,
+                            exts);
+                    var optionsJson = options;
+
+                    var result = new
+                    {
+                        statusCode = 200,
+                        status = "success",
+                        message = "設定成功，請返回option物件給予使用者",
+                        option = options
+                    };
+                    return Content(HttpStatusCode.OK, result);
+                }
+            }
+            else // 非註冊類型 if (IsRegister == false) 
+            {
+
+                // 1. Create options
+                var authenticatorSelection = new AuthenticatorSelection
+                {
+                    ResidentKey = ResidentKeyRequirement.Required,
+                    UserVerification = UserVerificationRequirement.Required,
+                    //AuthenticatorAttachment   = AuthenticatorAttachment.CrossPlatform
+                };
+
+                var exts = new AuthenticationExtensionsClientInputs() { };
+
+                var options =
+                    _fido2.GetAssertionOptions(
+                        new List<Fido2NetLib.Objects.PublicKeyCredentialDescriptor>() { },
+                        UserVerificationRequirement.Required,
+                        exts);
+
+                // 2. Temporarily store options, session/in-memory cache/redis/db
+                //HttpContext.Current.Session.Add("fido2.assertionOptions", options.ToJson());
+
+                var result = new
+                {
+                    statusCode = 200,
+                    status = "success",
+                    message = "設定成功，請返回option物件給予使用者",
+                    option = options
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
+
+            // }
+            //catch (Exception e)
+            //{
+            //    var result = new
+            //    {
+            //        statusCode = 500,
+            //        status = "error",
+            //        message = "其他錯誤",
+            //    };
+            //    return Content(HttpStatusCode.OK, result);         
+            ////    return this.Ok(new CredentialCreateOptions { Status = "error", ErrorMessage = e.Message });
+            //}
+
+        }
+        #endregion
+
+
+        #region FCS-10  驗證使用者身分(Attestation)  
+        //[HttpPost]
+        //[Route("api/login/attestation/result")]
+        //public async Task<IHttpActionResult> AuthnAttestationResult(AuthnAttestationResultInput inputs)
+        //{
+
+        //    // 1. get the options we sent the client
+        //    var options = inputs.ccp;
+
+        //    //// 2. Create callback so that lib can verify credential id is unique to this user
+        //    IsCredentialIdUniqueToUserAsyncDelegate callback = async (args, cancellationToken) =>
+        //    {
+        //        var users = db.Users.Where(x => x.Account == args.User.Name)?.FirstOrDefault();
+        //        if (users != null)
+        //            return false;
+
+        //        return true;
+        //    };
+
+        //    // 2. Verify and make the credentials
+        //    var success = await _fido2.MakeNewCredentialAsync(
+        //        inputs.aarr,
+        //        options,
+        //        callback);
+
+        //    // 3. Store the credentials in db
+        //    Fido2User UserFromOption = options.User;
+
+        //    var InsertSC = new StoredCredential    //這邊要新增一張表
+        //    {
+        //        UserId = UserFromOption.Id,
+        //        CredType = success.Result.Type.ToString(),
+        //        UserHandle = success.Result.User.Id,
+        //        AaGuid = success.Result.AaGuid,
+        //        //Descriptor = new PublicKeyCredentialDescriptor( success.Result.CredentialId ),
+        //        DescriptorId = success.Result.Id,
+        //        PublicKey = success.Result.PublicKey,
+        //        RegDate = DateTime.Now
+        //        /*
+        //        Id = success.Result.Id,
+        //        Descriptor = new PublicKeyCredentialDescriptor( success.Result.Id ),
+        //        PublicKey = success.Result.PublicKey,
+        //        UserHandle = success.Result.User.Id,
+        //        SignCount = success.Result.Counter,
+        //        CredType = success.Result.CredType,
+        //        RegDate = DateTime.Now,
+        //        AaGuid = success.Result.AaGuid,
+        //        Transports = success.Result.Transports,
+        //        BE = success.Result.BE,
+        //        BS = success.Result.BS,
+        //        AttestationObject = success.Result.AttestationObject,
+        //        AttestationClientDataJSON = success.Result.AttestationClientDataJSON,
+        //        DevicePublicKeys = new List<byte[]>() { success.Result.DevicePublicKey }
+        //        */
+        //    });
+        //    db.StoredCredential.Add(InsertSC);
+        //    db.SaveChanges();
+
+        //    // 4. return "ok" to the client
+        //    var result = new
+        //    {
+        //        statusCode = 200,
+        //        status = "success",
+        //        message = "註冊成功，請重新登入",
+        //    };
+        //    return Content(HttpStatusCode.OK, result);
+        //}
+        #endregion
+
+
+        #region FCS-11  驗證使用者身分(Assertion)   
+        //[HttpPost]
+        //[Route("api/login/assertion/result")]
+        //public async Task<IHttpActionResult> AuthnAssertionResult(AuthnAssertionResultInput inputs)
+        //{
+
+        //    // 1. get the options we sent the client
+        //    var options = inputs.ao;
+
+        //    // 2. Get registered credential from database
+        //    var creds = this._demoStorage.GetCredentialById(inputs.aarr.Id) ?? throw new Exception("Unknown credentials");
+
+        //    // 3. Get credential counter from database
+        //    var storedCounter = creds.SignatureCounter;
+
+        //    // 4. Create callback to check if userhandle owns the credentialId
+        //    IsUserHandleOwnerOfCredentialIdAsync callback = async (args, cancellationToken) =>
+        //    {
+        //        var storedCreds = this._demoStorage.GetCredentialsByUserHandle(args.UserHandle);
+        //        return storedCreds.Any(c => c.DescriptorId.SequenceEqual(args.CredentialId));
+        //    };
+
+        //    // 5. Make the assertion
+        //    var res = await _fido2.MakeAssertionAsync(
+        //        clientResponse,
+        //        options,
+        //        creds.PublicKey,
+        //        new List<byte[]>(),
+        //        storedCounter,
+        //        callback);
+
+        //    if (res.Status == "ok")
+        //    {
+        //        var users = this._demoStorage.GetUsersByCredentialId(res.CredentialId);
+
+        //        if (users.Count() > 0)
+        //        {
+        //            var username = users.First().Name;
+
+        //            // create identity
+        //            var identity = new ClaimsIdentity(
+        //            new[]
+        //            {
+        //                    new Claim( ClaimTypes.NameIdentifier, Guid.NewGuid().ToString() ),
+        //                    new Claim( ClaimTypes.Name, username )
+        //            }, "custom");
+        //            ClaimsPrincipal principal = new ClaimsPrincipal(identity);
+
+        //            FormsAuthentication.SetAuthCookie(username, false);
+        //        }
+        //        else
+        //        {
+        //            throw new Exception("no user");
+        //        }
+        //    }
+        //    else
+        //    {
+        //        throw new Exception("validation failed");
+        //    }
+
+        //    // 6. Store the updated counter
+        //    this._demoStorage.UpdateCounter(res.CredentialId, res.SignCount);
+
+        //    // 7. return OK to client
+        //    return this.Ok(res);
+
+        //}
+        #endregion
+
+
+
+
+
         public class LoginToken
         {
             public string code { get; set; }
         }
 
+        public class AuthnUser
+        {
+            [Required]
+            public string inputName { get; set; }
+            public bool isRegister { get; set; }  // true or false
+        }
+
+        public class AuthnAttestationResultInput
+        {
+            public AuthenticatorAttestationRawResponse aarr { get; set; }
+            public CredentialCreateOptions ccp { get; set; }
+        }
+
+        public class AuthnAssertionResultInput
+        {
+            public AuthenticatorAssertionRawResponse aarr { get; set; }
+            public AssertionOptions ao { get; set; }
+        }
 
     }
 }
+
+
+
+
+
+

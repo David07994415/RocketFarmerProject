@@ -74,5 +74,8 @@ namespace FarmerPro.Models
 
         [Display(Name = "1-1聊天室")]//其他表-外鍵
         public virtual ICollection<ChatRoom> ChatRoom { get; set; }
+
+        [Display(Name = "憑證")]//其他表-外鍵
+        public virtual ICollection<Credential> Credential { get; set; }
     }
 }

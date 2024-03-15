@@ -24,7 +24,8 @@ namespace FarmerPro.Controllers
             try
             {
                 var CurrentLiveEvent = db.LiveSettings.AsEnumerable()
-                    .Where(x => x.LiveDate.Date == DateTime.Now.Date && (x.StartTime.Hours <= DateTime.Now.Hour && x.StartTime.Minutes <= DateTime.Now.Minute &&  x.EndTime.Hours > DateTime.Now.Hour && x.EndTime.Minutes <= DateTime.Now.Minute))
+                    .Where(x=>x.Id==47) // Fix Render Data
+                    //.Where(x => x.LiveDate.Date == DateTime.Now.Date && (x.StartTime.Hours <= DateTime.Now.Hour && x.StartTime.Minutes <= DateTime.Now.Minute &&  x.EndTime.Hours > DateTime.Now.Hour && x.EndTime.Minutes <= DateTime.Now.Minute))
                     .Select(liveSetting => new
                     {
                         LiveSetting = liveSetting,
@@ -47,7 +48,8 @@ namespace FarmerPro.Controllers
 
 
                 var UpcomingLiveEvent = db.LiveSettings.AsEnumerable()
-                    .Where(x => (x.LiveDate.Date == DateTime.Now.Date && x.StartTime.Hours > DateTime.Now.Hour) || x.LiveDate.Date > DateTime.Now.Date)
+                    .Where(x=> x.LiveDate.Date >= new DateTime(2024,03,09))  // Fix Render Data
+                    //.Where(x => (x.LiveDate.Date == DateTime.Now.Date && x.StartTime.Hours > DateTime.Now.Hour) || x.LiveDate.Date > DateTime.Now.Date)
                     .OrderBy(x => x.LiveDate)
                     .Select(liveSetting => new
                     {
@@ -159,7 +161,8 @@ namespace FarmerPro.Controllers
                 }
                 else 
                 {
-                    if (LiveEvent.LiveDate.Date == DateTime.Now.Date && (LiveEvent.StartTime.Hours <= DateTime.Now.Hour && LiveEvent.StartTime.Minutes <= DateTime.Now.Minute && LiveEvent.EndTime.Hours > DateTime.Now.Hour && LiveEvent.EndTime.Minutes <= DateTime.Now.Minute))
+                    if(LiveEvent.Id==47) // Fix Render Data
+                    //if (LiveEvent.LiveDate.Date == DateTime.Now.Date && (LiveEvent.StartTime.Hours <= DateTime.Now.Hour && LiveEvent.StartTime.Minutes <= DateTime.Now.Minute && LiveEvent.EndTime.Hours > DateTime.Now.Hour && LiveEvent.EndTime.Minutes <= DateTime.Now.Minute))
                     {
 
                         var topproduct = db.LiveProducts.Where(x => x.LiveSettingId == liveId && x.IsTop == true)?.FirstOrDefault();
