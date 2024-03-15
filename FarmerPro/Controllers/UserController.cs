@@ -27,6 +27,8 @@ using System.Security;
 using Newtonsoft.Json.Linq;
 using System.Security.Claims;
 using System.Web.Security;
+using Google.Apis.PeopleService.v1.Data;
+using Newtonsoft.Json;
 
 namespace FarmerPro.Controllers
 {
@@ -550,10 +552,22 @@ namespace FarmerPro.Controllers
                 }
                 else  // 使用者帳號沒有存在，進行FIDO註冊
                 {
+
+                    //Hash 加鹽加密
+                    Guid GuidPW = Guid.NewGuid();
+                    string password = GuidPW.ToString();   // 亂數密碼
+                    var salt = CreateSalt();
+                    string saltStr = Convert.ToBase64String(salt); //將 byte 改回字串存回資料表
+                    var hash = HashPassword(password, salt);
+                    string hashPassword = Convert.ToBase64String(hash);
+
                     var InsertUser = new User
                     {
                         Account = UserAccount,
-                        Category = UserCategory.一般會員 //先固定
+                        Password = hashPassword,
+                        NickName = username,
+                        Category = UserCategory.一般會員, //先固定
+                        Salt = saltStr
                     };
                     db.Users.Add(InsertUser);
                     db.SaveChanges();
@@ -613,7 +627,7 @@ namespace FarmerPro.Controllers
 
                 var options =
                     _fido2.GetAssertionOptions(
-                        new List<Fido2NetLib.Objects.PublicKeyCredentialDescriptor>() { },
+                        new List<PublicKeyCredentialDescriptor>() { },
                         UserVerificationRequirement.Required,
                         exts);
 
@@ -648,72 +662,88 @@ namespace FarmerPro.Controllers
 
 
         #region FCS-10  驗證使用者身分(Attestation)  
-        //[HttpPost]
-        //[Route("api/login/attestation/result")]
-        //public async Task<IHttpActionResult> AuthnAttestationResult(AuthnAttestationResultInput inputs)
-        //{
+        [HttpPost]
+        [Route("api/login/attestation/result")]     //AuthnAttestationResultInput
+        public async Task<IHttpActionResult> AuthnAttestationResult(AuthnAttestationResultInput inputs)
+        {
+            try 
+            {
+                // 1. get the options we sent the client
+                AuthenticatorAttestationRawResponse aaar = inputs.aarr;
+                CredentialCreateOptions options = inputs.ccp;
+                //var parsedResponse = AuthenticatorAttestationResponse.Parse(aaar);
+                //var jsonOptions = inputs.ccp as string;
+                //var options = CredentialCreateOptions.FromJson(jsonOptions);
 
-        //    // 1. get the options we sent the client
-        //    var options = inputs.ccp;
+                //// 2. Create callback so that lib can verify credential id is unique to this user
+                IsCredentialIdUniqueToUserAsyncDelegate callback = async (args, cancellationToken) =>
+            {
+                //先省略
+                //var users = db.Users.Where(x => x.Account == args.User.Name)?.FirstOrDefault();
+                //if (users != null)
+                //    return false;
 
-        //    //// 2. Create callback so that lib can verify credential id is unique to this user
-        //    IsCredentialIdUniqueToUserAsyncDelegate callback = async (args, cancellationToken) =>
-        //    {
-        //        var users = db.Users.Where(x => x.Account == args.User.Name)?.FirstOrDefault();
-        //        if (users != null)
-        //            return false;
+                //return true;
+                return false;
+            };
 
-        //        return true;
-        //    };
+                //// 2. Verify and make the credentials
+                var success = await _fido2.MakeNewCredentialAsync(
+                    aaar,
+                    options,
+                    callback);
 
-        //    // 2. Verify and make the credentials
-        //    var success = await _fido2.MakeNewCredentialAsync(
-        //        inputs.aarr,
-        //        options,
-        //        callback);
+                //// 3. Store the credentials in db
+                //Fido2User inputUserInfor = options.User;
+                //byte[] userIDbytes = inputUserInfor.Id;
+                //int userId = BitConverter.ToInt32(userIDbytes, 0); //外鍵
+                //string PK= success.Result.PublicKey.ToString();
+                //string CID = success.Result.AttestationClientDataJson.ToString();
 
-        //    // 3. Store the credentials in db
-        //    Fido2User UserFromOption = options.User;
 
-        //    var InsertSC = new StoredCredential    //這邊要新增一張表
-        //    {
-        //        UserId = UserFromOption.Id,
-        //        CredType = success.Result.Type.ToString(),
-        //        UserHandle = success.Result.User.Id,
-        //        AaGuid = success.Result.AaGuid,
-        //        //Descriptor = new PublicKeyCredentialDescriptor( success.Result.CredentialId ),
-        //        DescriptorId = success.Result.Id,
-        //        PublicKey = success.Result.PublicKey,
-        //        RegDate = DateTime.Now
-        //        /*
-        //        Id = success.Result.Id,
-        //        Descriptor = new PublicKeyCredentialDescriptor( success.Result.Id ),
-        //        PublicKey = success.Result.PublicKey,
-        //        UserHandle = success.Result.User.Id,
-        //        SignCount = success.Result.Counter,
-        //        CredType = success.Result.CredType,
-        //        RegDate = DateTime.Now,
-        //        AaGuid = success.Result.AaGuid,
-        //        Transports = success.Result.Transports,
-        //        BE = success.Result.BE,
-        //        BS = success.Result.BS,
-        //        AttestationObject = success.Result.AttestationObject,
-        //        AttestationClientDataJSON = success.Result.AttestationClientDataJSON,
-        //        DevicePublicKeys = new List<byte[]>() { success.Result.DevicePublicKey }
-        //        */
-        //    });
-        //    db.StoredCredential.Add(InsertSC);
-        //    db.SaveChanges();
+                //var InsertSC = new Credential    //這邊要新增一張表
+                //{
+                //    UserId = userId,
+                //    CredentialId = success.Result.Id.ToString(),  //success.Result.CredentialId,
+                //     PublicKey = success.Result.PublicKey.ToString()//success.Result.PublicKey,
+                //    //Descriptor = new PublicKeyCredentialDescriptor( success.Result.CredentialId ),
+                //    //DescriptorId = success.Result.Id,
+                //    //RegDate = DateTime.Now
+                //    /*
+                //    Id = success.Result.Id,
+                //    Descriptor = new PublicKeyCredentialDescriptor( success.Result.Id ),
+                //    PublicKey = success.Result.PublicKey,
+                //    UserHandle = success.Result.User.Id,
+                //    SignCount = success.Result.Counter,
+                //    CredType = success.Result.CredType,
+                //    RegDate = DateTime.Now,
+                //    AaGuid = success.Result.AaGuid,
+                //    Transports = success.Result.Transports,
+                //    BE = success.Result.BE,
+                //    BS = success.Result.BS,
+                //    AttestationObject = success.Result.AttestationObject,
+                //    AttestationClientDataJSON = success.Result.AttestationClientDataJSON,
+                //    DevicePublicKeys = new List<byte[]>() { success.Result.DevicePublicKey }
+                //    */
+                //};
+                //db.Credential.Add(InsertSC);
+                //db.SaveChanges();
 
-        //    // 4. return "ok" to the client
-        //    var result = new
-        //    {
-        //        statusCode = 200,
-        //        status = "success",
-        //        message = "註冊成功，請重新登入",
-        //    };
-        //    return Content(HttpStatusCode.OK, result);
-        //}
+                // 4. return "ok" to the client
+                var result = new
+            {
+                statusCode = 200,
+                status = "success",
+                message = "註冊成功，請重新登入",
+            };
+            return Content(HttpStatusCode.OK, success.ToString());
+            }
+            catch (Exception ex) 
+            {
+                return Content(HttpStatusCode.OK, ex.Message + ex.StackTrace);
+            }
+
+        }
         #endregion
 
 
@@ -786,6 +816,33 @@ namespace FarmerPro.Controllers
         //}
         #endregion
 
+        #region FCS-12  Credential Test()   
+        [HttpGet]
+        [Route("api/login/test/test")]
+        public IHttpActionResult TestWebAuthn() 
+        {
+            var showAllCredential = db.Credential.Where(x => x.UserId == 1)?.FirstOrDefault();
+            if (showAllCredential != null) 
+            {
+                var result = new
+                {
+                    CredentialId = showAllCredential.Id,
+                    CredentialColumn = showAllCredential.CredentialId,
+                    PublicColumn = showAllCredential.PublicKey,
+                    MainKeyUserName = showAllCredential.User.Account
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
+            else
+            {
+                var result = new
+                {
+                    state = "null status",
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
+        }
+        #endregion
 
 
 
@@ -808,10 +865,34 @@ namespace FarmerPro.Controllers
             public CredentialCreateOptions ccp { get; set; }
         }
 
+
+        public class Otherclass
+        {
+            public string ccp2 { get; set; }
+            public string ccp3 { get; set; }
+        }
+
+        //public AuthenticatorAttestationRawResponse aarr { get; set; }
+
         public class AuthnAssertionResultInput
         {
             public AuthenticatorAssertionRawResponse aarr { get; set; }
             public AssertionOptions ao { get; set; }
+        }
+
+
+        public class Fake
+        {
+            public PublicKeyCredentialRpEntity rp { get; set; }
+            public Fido2User user { get; set; }
+            [JsonConverter(typeof(Base64UrlConverter))]
+            public byte[] challenge { get; set; }
+            public List<PubKeyCredParam> pubKeyCredParams { get; set; }
+            public long timeout { get; set; }
+            public AttestationConveyancePreference attestation { get; set; }
+            public AuthenticatorSelection authenticatorSelection { get; set; }
+            public List<PublicKeyCredentialDescriptor> excludeCredentials { get; set; }
+            public AuthenticationExtensionsClientInputs extensions { get; set; }
         }
 
     }

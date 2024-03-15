@@ -350,6 +350,7 @@
     <Compile Include="Models\Cart.cs" />
     <Compile Include="Models\CartItem.cs" />
     <Compile Include="Models\ChatRoom.cs" />
+    <Compile Include="Models\Credential.cs" />
     <Compile Include="Models\EnumList.cs" />
     <Compile Include="Models\FarmerProDB.cs" />
     <Compile Include="Models\GlobalVariable.cs" />
