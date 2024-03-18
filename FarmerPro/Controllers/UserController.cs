@@ -600,6 +600,12 @@ namespace FarmerPro.Controllers
                             authenticatorSelection,
                             AttestationConveyancePreference.None,
                             exts);
+                    //options.Rp = new PublicKeyCredentialRpEntity(@"http://localhost:3000/","FIDDD")
+                    //{
+                    //    Id = "your_rp_id",
+                    //    Name = "Your RP Name",
+                    //    Icon = "your_rp_icon_url"
+                    //};
                     var optionsJson = options;
 
                     var result = new
@@ -661,7 +667,7 @@ namespace FarmerPro.Controllers
         #endregion
 
 
-        #region FCS-10  驗證使用者身分(Attestation)  
+        #region FCS-10  驗證使用者註冊身分(Attestation)  
         [HttpPost]
         [Route("api/login/attestation/result")]     //AuthnAttestationResultInput
         public async Task<IHttpActionResult> AuthnAttestationResult(AuthnAttestationResultInput inputs)
@@ -683,8 +689,8 @@ namespace FarmerPro.Controllers
                 //if (users != null)
                 //    return false;
 
-                //return true;
-                return false;
+                return true;
+                //return false;
             };
 
                 //// 2. Verify and make the credentials
@@ -693,50 +699,50 @@ namespace FarmerPro.Controllers
                     options,
                     callback);
 
-                //// 3. Store the credentials in db
-                //Fido2User inputUserInfor = options.User;
-                //byte[] userIDbytes = inputUserInfor.Id;
-                //int userId = BitConverter.ToInt32(userIDbytes, 0); //外鍵
-                //string PK= success.Result.PublicKey.ToString();
-                //string CID = success.Result.AttestationClientDataJson.ToString();
+                // 3. Store the credentials in db
+                Fido2User inputUserInfor = options.User;
+                byte[] userIDbytes = inputUserInfor.Id;
+                int userId = BitConverter.ToInt32(userIDbytes, 0); //外鍵
+                string PK = success.Result.PublicKey.ToString();
+                string CID = success.Result.AttestationClientDataJson.ToString();
 
 
-                //var InsertSC = new Credential    //這邊要新增一張表
-                //{
-                //    UserId = userId,
-                //    CredentialId = success.Result.Id.ToString(),  //success.Result.CredentialId,
-                //     PublicKey = success.Result.PublicKey.ToString()//success.Result.PublicKey,
-                //    //Descriptor = new PublicKeyCredentialDescriptor( success.Result.CredentialId ),
-                //    //DescriptorId = success.Result.Id,
-                //    //RegDate = DateTime.Now
-                //    /*
-                //    Id = success.Result.Id,
-                //    Descriptor = new PublicKeyCredentialDescriptor( success.Result.Id ),
-                //    PublicKey = success.Result.PublicKey,
-                //    UserHandle = success.Result.User.Id,
-                //    SignCount = success.Result.Counter,
-                //    CredType = success.Result.CredType,
-                //    RegDate = DateTime.Now,
-                //    AaGuid = success.Result.AaGuid,
-                //    Transports = success.Result.Transports,
-                //    BE = success.Result.BE,
-                //    BS = success.Result.BS,
-                //    AttestationObject = success.Result.AttestationObject,
-                //    AttestationClientDataJSON = success.Result.AttestationClientDataJSON,
-                //    DevicePublicKeys = new List<byte[]>() { success.Result.DevicePublicKey }
-                //    */
-                //};
-                //db.Credential.Add(InsertSC);
-                //db.SaveChanges();
+                var InsertSC = new Credential    //這邊要新增一張表
+                {
+                    UserId = userId,
+                    CredentialId = success.Result.Id,  //success.Result.CredentialId,
+                    PublicKey = success.Result.PublicKey//success.Result.PublicKey,
+                    //Descriptor = new PublicKeyCredentialDescriptor( success.Result.CredentialId ),
+                    //DescriptorId = success.Result.Id,
+                    //RegDate = DateTime.Now
+                    /*
+                    Id = success.Result.Id,
+                    Descriptor = new PublicKeyCredentialDescriptor( success.Result.Id ),
+                    PublicKey = success.Result.PublicKey,
+                    UserHandle = success.Result.User.Id,
+                    SignCount = success.Result.Counter,
+                    CredType = success.Result.CredType,
+                    RegDate = DateTime.Now,
+                    AaGuid = success.Result.AaGuid,
+                    Transports = success.Result.Transports,
+                    BE = success.Result.BE,
+                    BS = success.Result.BS,
+                    AttestationObject = success.Result.AttestationObject,
+                    AttestationClientDataJSON = success.Result.AttestationClientDataJSON,
+                    DevicePublicKeys = new List<byte[]>() { success.Result.DevicePublicKey }
+                    */
+                };
+                db.Credential.Add(InsertSC);
+                db.SaveChanges();
 
                 // 4. return "ok" to the client
-                var result = new
+             var result = new
             {
                 statusCode = 200,
                 status = "success",
                 message = "註冊成功，請重新登入",
             };
-            return Content(HttpStatusCode.OK, success.ToString());
+            return Content(HttpStatusCode.OK, result.ToString());
             }
             catch (Exception ex) 
             {
@@ -747,73 +753,134 @@ namespace FarmerPro.Controllers
         #endregion
 
 
-        #region FCS-11  驗證使用者身分(Assertion)   
-        //[HttpPost]
-        //[Route("api/login/assertion/result")]
-        //public async Task<IHttpActionResult> AuthnAssertionResult(AuthnAssertionResultInput inputs)
-        //{
+        #region FCS-11  驗證使用者登入身分(Assertion)   
+        [HttpPost]
+        [Route("api/login/assertion/result")]
+        public async Task<IHttpActionResult> AuthnAssertionResult(AuthnAssertionResultInput inputs)
+        {
+            try
+            {
 
-        //    // 1. get the options we sent the client
-        //    var options = inputs.ao;
 
-        //    // 2. Get registered credential from database
-        //    var creds = this._demoStorage.GetCredentialById(inputs.aarr.Id) ?? throw new Exception("Unknown credentials");
 
-        //    // 3. Get credential counter from database
-        //    var storedCounter = creds.SignatureCounter;
+                // 1. get the options we sent the client
+                var options = inputs.ao;
+                var AssertionResult = inputs.aarr;
 
-        //    // 4. Create callback to check if userhandle owns the credentialId
-        //    IsUserHandleOwnerOfCredentialIdAsync callback = async (args, cancellationToken) =>
-        //    {
-        //        var storedCreds = this._demoStorage.GetCredentialsByUserHandle(args.UserHandle);
-        //        return storedCreds.Any(c => c.DescriptorId.SequenceEqual(args.CredentialId));
-        //    };
+                // 2. Get registered credential from database
+                var CredentialData = db.Credential.Where(x => x.CredentialId == AssertionResult.Id)?.FirstOrDefault();
+                if (CredentialData == null)
+                {
+                    var result = new
+                    {
+                        statusCode = 401,
+                        status = "error",
+                        message = "不正確的 Credential Id",
+                    };
+                    return Content(HttpStatusCode.OK, result);
+                }
 
-        //    // 5. Make the assertion
-        //    var res = await _fido2.MakeAssertionAsync(
-        //        clientResponse,
-        //        options,
-        //        creds.PublicKey,
-        //        new List<byte[]>(),
-        //        storedCounter,
-        //        callback);
+                // 3. Get credential counter from database
+                //var storedCounter = creds.SignatureCounter;
+                uint storedCounter = 0;
 
-        //    if (res.Status == "ok")
-        //    {
-        //        var users = this._demoStorage.GetUsersByCredentialId(res.CredentialId);
+                // 4. Create callback to check if userhandle owns the credentialId
+                IsUserHandleOwnerOfCredentialIdAsync callback = async (args, cancellationToken) =>
+                {
+                    //var storedCreds = this._demoStorage.GetCredentialsByUserHandle(args.UserHandle);
+                    //return storedCreds.Any(c => c.DescriptorId.SequenceEqual(args.CredentialId));
+                    return true; //先忽略
+                };
 
-        //        if (users.Count() > 0)
-        //        {
-        //            var username = users.First().Name;
+                // 5. Make the assertion
+                var res = await _fido2.MakeAssertionAsync(
+                    AssertionResult,
+                    options,
+                    CredentialData.PublicKey,
+                    new List<byte[]>(),
+                    storedCounter,
+                    callback);
 
-        //            // create identity
-        //            var identity = new ClaimsIdentity(
-        //            new[]
-        //            {
-        //                    new Claim( ClaimTypes.NameIdentifier, Guid.NewGuid().ToString() ),
-        //                    new Claim( ClaimTypes.Name, username )
-        //            }, "custom");
-        //            ClaimsPrincipal principal = new ClaimsPrincipal(identity);
+                if (res.Status == "ok")
+                {
+                    var IsUser = db.Users.Where(x => x.Id == CredentialData.UserId).FirstOrDefault();
+                    JwtAuthUtil jwtAuthUtil = new JwtAuthUtil();
+                    string jwtToken = jwtAuthUtil.GenerateToken(IsUser.Id, (int)IsUser.Category);
 
-        //            FormsAuthentication.SetAuthCookie(username, false);
-        //        }
-        //        else
-        //        {
-        //            throw new Exception("no user");
-        //        }
-        //    }
-        //    else
-        //    {
-        //        throw new Exception("validation failed");
-        //    }
+                    var result = new
+                    {
+                        statusCode = 200,
+                        status = "success",
+                        message = "登入成功", // token失效時間:一天
+                        token = jwtToken,  // 登入成功時，回傳登入成功順便夾帶 JwtToken
+                        data = new
+                        {
+                            id = IsUser.Id,
+                            nickName = IsUser.NickName,
+                            account = IsUser.Account,
+                            photo = IsUser.Photo,
+                            category = IsUser.Category,
+                            birthday = IsUser.Birthday,
+                            phone = IsUser.Phone,
+                            sex = IsUser.Sex,
+                            vision = IsUser.Vision,
+                            description = IsUser.Description,
+                        }
+                    };
+                    return Content(HttpStatusCode.OK, result);
+                }
+                else
+                {
+                    var result = new
+                    {
+                        statusCode = 402,
+                        status = "error",
+                        message = "驗證失敗",
+                    };
+                    return Content(HttpStatusCode.OK, result);
+                }
+            }
+            catch (Exception ex) 
+            {
+                return Content(HttpStatusCode.OK, ex.Message + ex.StackTrace);
+            }
 
-        //    // 6. Store the updated counter
-        //    this._demoStorage.UpdateCounter(res.CredentialId, res.SignCount);
+            //    if (res.Status == "ok")
+            //    {
+            //        var users = this._demoStorage.GetUsersByCredentialId(res.CredentialId);
 
-        //    // 7. return OK to client
-        //    return this.Ok(res);
+            //        if (users.Count() > 0)
+            //        {
+            //            var username = users.First().Name;
 
-        //}
+            //            // create identity
+            //            var identity = new ClaimsIdentity(
+            //            new[]
+            //            {
+            //                    new Claim( ClaimTypes.NameIdentifier, Guid.NewGuid().ToString() ),
+            //                    new Claim( ClaimTypes.Name, username )
+            //            }, "custom");
+            //            ClaimsPrincipal principal = new ClaimsPrincipal(identity);
+
+            //            FormsAuthentication.SetAuthCookie(username, false);
+            //        }
+            //        else
+            //        {
+            //            throw new Exception("no user");
+            //        }
+            //    }
+            //    else
+            //    {
+            //        throw new Exception("validation failed");
+            //    }
+
+            //    // 6. Store the updated counter
+            //    this._demoStorage.UpdateCounter(res.CredentialId, res.SignCount);
+
+            //    // 7. return OK to client
+            //    return this.Ok(res);
+
+        }
         #endregion
 
         #region FCS-12  Credential Test()   
@@ -894,6 +961,14 @@ namespace FarmerPro.Controllers
             public List<PublicKeyCredentialDescriptor> excludeCredentials { get; set; }
             public AuthenticationExtensionsClientInputs extensions { get; set; }
         }
+
+        public static string ConvertToBase64Url(byte[] data)
+        {
+            string base64 = Convert.ToBase64String(data);
+            string base64Url = base64.Replace('+', '-').Replace('/', '_').TrimEnd('=');
+            return base64Url;
+        }
+
 
     }
 }

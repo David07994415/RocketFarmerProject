@@ -18,11 +18,11 @@ namespace FarmerPro.Models
 
         [Display(Name = "CredentialId")]
         [Required]
-        public string CredentialId { get; set; }
+        public byte[] CredentialId { get; set; }
 
         [Display(Name = "公鑰")]
         [Required]
-        public string PublicKey { get; set; }
+        public byte[] PublicKey { get; set; }
 
         [Display(Name = "建立時間")]
         public DateTime CreateTime { get; set; } = DateTime.Now;
