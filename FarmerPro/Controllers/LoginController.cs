@@ -16,7 +16,7 @@ using NSwag.Annotations;
 
 namespace FarmerPro.Controllers
 {
-    [OpenApiTag("Login", Description = "無密碼登入及忘記密碼")]
+    [OpenApiTag("Login", Description = "一般登入註冊、無密碼、PassKey")]
     public class LoginController : ApiController
     {
         private FarmerProDB db = new FarmerProDB();

@@ -29,15 +29,18 @@ using System.Security.Claims;
 using System.Web.Security;
 using Google.Apis.PeopleService.v1.Data;
 using Newtonsoft.Json;
+using NSwag.Annotations;
 
 namespace FarmerPro.Controllers
 {
+    [OpenApiTag("Login", Description = "一般登入註冊、無密碼、PassKey")]
     public class UserController : ApiController
     {
         //第一步: 取得資料來源
         private FarmerProDB db = new FarmerProDB();
 
         private IFido2 _fido2;
+
         public UserController()
         {
             Fido2Configuration config = new Fido2Configuration();
@@ -53,15 +56,19 @@ namespace FarmerPro.Controllers
             //_fido2 = WebApiApplication.ServiceLocator.GetService<IFido2>();
         }
 
-
         //第二步: 使用的CRUD方法+簡易判斷的方法
         //建立 POST: api/User
 
-        #region FCR-1 註冊
+        #region FCR-01 註冊
+
+        /// <summary>
+        /// FCR-1 註冊
+        /// </summary>
+        /// <param name="input">提供註冊所需的 JSON 物件</param>
+        /// <returns>返回註冊狀態</returns>
         [HttpPost]
         //自定義路由
         [Route("api/register")]
-        //使用 IHttpActionResult 作為返回 HTTP 回應類型
         public IHttpActionResult register([FromBody] Register input)
         {
             //try
@@ -101,10 +108,10 @@ namespace FarmerPro.Controllers
                     var hash = HashPassword(password, salt);
                     string hashPassword = Convert.ToBase64String(hash);
 
-                    //資料表User 賦予 到 newaccount   
+                    //資料表User 賦予 到 newaccount
                     var newaccount = new User
                     {
-                        //將input 輸入的 Account(model資料表欄位) 賦予 到 Account         
+                        //將input 輸入的 Account(model資料表欄位) 賦予 到 Account
                         Account = input.account,
                         Password = hashPassword,
                         Category = input.category,
@@ -126,7 +133,6 @@ namespace FarmerPro.Controllers
                     return Content(HttpStatusCode.OK, result);
                     //return Ok(result);
                 }
-
             }
 
             //}
@@ -148,12 +154,13 @@ namespace FarmerPro.Controllers
         //使用加密安全隨機數產生器 ( ) 產生隨機鹽
         private byte[] CreateSalt()
         {
-            //建立一個大小為 16 ( ) 的位元組陣列buffer儲存產生的 salt   
+            //建立一個大小為 16 ( ) 的位元組陣列buffer儲存產生的 salt
             var buffer = new byte[16];
             var rng = new RNGCryptoServiceProvider();
             rng.GetBytes(buffer);
             return buffer;
         }
+
         // Hash 處理加鹽的密碼功能
         //將使用者的密碼和產生的鹽作為輸入，使用 Argon2 演算法執行密碼雜湊
         private byte[] HashPassword(string password, byte[] salt)
@@ -170,9 +177,16 @@ namespace FarmerPro.Controllers
             //Argon2 演算法產生 16 位元組雜湊並將其作為位元組數組傳回
             return argon2.GetBytes(16);
         }
-        #endregion
 
-        #region FCR-1 登入
+        #endregion FCR-01 註冊
+
+        #region FCS-01 登入
+
+        /// <summary>
+        /// FCS-01 登入
+        /// </summary>
+        /// <param name="input">提供登入所需的 JSON 物件</param>
+        /// <returns>返回登入狀態</returns>
         //第二支 POST: api/User
         [HttpPost]
         [Route("api/login/general")]
@@ -219,7 +233,6 @@ namespace FarmerPro.Controllers
                             message = "登入失敗，您的帳號或密碼不正確"
                         };
                         return Content(HttpStatusCode.OK, result);
-
                     }
                     else
                     {
@@ -252,13 +265,19 @@ namespace FarmerPro.Controllers
                 }
             }
         }
-        #endregion
 
-        #region FCS-6 登出
+        #endregion FCS-01 登入
+
+        #region FCS-06 登出
+
+        /// <summary>
+        /// FCS-06 登出
+        /// </summary>
+        /// <param></param>
+        /// <returns>返回登出狀態</returns>
         [HttpPost]
         [Route("api/logout")]
         [JwtAuthFilter]
-        //使用 IHttpActionResult 作為返回 HTTP 回應類型
         public IHttpActionResult Logout()
         {
             try
@@ -287,6 +306,7 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
+
         //注意，記得新增一個 account JSON class -> 資料表欄位
         public class login
         {
@@ -298,10 +318,16 @@ namespace FarmerPro.Controllers
             [MinLength(6)]
             public string password { get; set; }
         }
-        #endregion
 
+        #endregion FCS-06 登出
 
-        #region FCS-7 取得google帳號授權網址(登入)
+        #region FCS-07 取得google帳號授權網址(登入)
+
+        /// <summary>
+        /// FCS-07 取得google帳號授權網址(登入)
+        /// </summary>
+        /// <param></param>
+        /// <returns>返回取得授權網址</returns>
         [HttpGet]
         [Route("api/login/google")]
         public IHttpActionResult GetGooleOauth2Link()
@@ -364,9 +390,16 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-        #endregion
 
-        #region FCS-8  驗證Oauth2並回傳登入結果
+        #endregion FCS-07 取得google帳號授權網址(登入)
+
+        #region FCS-08 驗證Oauth2並回傳登入結果
+
+        /// <summary>
+        /// FCS-08 驗證Oauth2並回傳登入結果
+        /// </summary>
+        /// <param name="inputs">提供登入所需的 code</param>
+        /// <returns>返回jwtToken及登入結果</returns>
         [HttpPost]
         [Route("api/login/authcode")]
         public async Task<IHttpActionResult> LoginCodeTurntoToken(LoginToken inputs)
@@ -384,7 +417,6 @@ namespace FarmerPro.Controllers
             {
                 ClientSecrets = clientSecrets
             });
-
 
             string redirecturi = @"https://sun-live.vercel.app/auth/verify"; //這邊前端要改，後端console要加入
             //string redirecturi = @"http://localhost:3000/auth/verify";  //這邊前端要改，後端console要加入
@@ -430,7 +462,6 @@ namespace FarmerPro.Controllers
                 }
                 else  //資料庫沒有帳號資料，要先新增
                 {
-
                     //Hash 加鹽加密
                     Guid GuidPW = Guid.NewGuid();
                     string password = GuidPW.ToString();   // 亂數密碼
@@ -439,10 +470,10 @@ namespace FarmerPro.Controllers
                     var hash = HashPassword(password, salt);
                     string hashPassword = Convert.ToBase64String(hash);
 
-                    //資料表User 賦予 到 newaccount   
+                    //資料表User 賦予 到 newaccount
                     var newaccount = new User
                     {
-                        //將input 輸入的 Account(model資料表欄位) 賦予 到 Account         
+                        //將input 輸入的 Account(model資料表欄位) 賦予 到 Account
                         Account = UserAccount,
                         Password = hashPassword,
                         Category = UserCategory.一般會員,
@@ -516,18 +547,23 @@ namespace FarmerPro.Controllers
             //    return Content(HttpStatusCode.OK, result);
             //}
         }
-        #endregion
 
-        #region FCS-9  回傳使用者證明(Attestation)
+        #endregion FCS-08 驗證Oauth2並回傳登入結果
+
+        #region FCS-09 回傳使用者證明(Attestation)
+
+        /// <summary>
+        /// FCS-09 回傳使用者證明(Attestation)
+        /// </summary>
+        /// <param name="inputs">提供登入所需的 JSON 物件</param>
+        /// <returns>返回 optionsJson</returns>
         //[Authorize]
         [HttpPost]
         [Route("api/login/attestation")]
         public async Task<IHttpActionResult> AuthnAttestation(AuthnUser inputs)
         {
-
             //try
             //{
-
             //var username = this.User.Identity.Name;  // USE   [Authorize]
             //var displayName = username;     // USE   [Authorize]
 
@@ -552,7 +588,6 @@ namespace FarmerPro.Controllers
                 }
                 else  // 使用者帳號沒有存在，進行FIDO註冊
                 {
-
                     //Hash 加鹽加密
                     Guid GuidPW = Guid.NewGuid();
                     string password = GuidPW.ToString();   // 亂數密碼
@@ -577,7 +612,6 @@ namespace FarmerPro.Controllers
                     // 2. Get user existing keys by username
                     //var existingKeys = this.db.GetCredentialsByUser(user).Select(c => new PublicKeyCredentialDescriptor(c.DescriptorId)).ToList();
                     var existingKeys = new List<PublicKeyCredentialDescriptor>();
-
 
                     // 3. Create options
                     var authenticatorSelection = new AuthenticatorSelection
@@ -618,9 +652,8 @@ namespace FarmerPro.Controllers
                     return Content(HttpStatusCode.OK, result);
                 }
             }
-            else // 非註冊類型 if (IsRegister == false) 
+            else // 非註冊類型 if (IsRegister == false)
             {
-
                 // 1. Create options
                 var authenticatorSelection = new AuthenticatorSelection
                 {
@@ -659,20 +692,25 @@ namespace FarmerPro.Controllers
             //        status = "error",
             //        message = "其他錯誤",
             //    };
-            //    return Content(HttpStatusCode.OK, result);         
+            //    return Content(HttpStatusCode.OK, result);
             ////    return this.Ok(new CredentialCreateOptions { Status = "error", ErrorMessage = e.Message });
             //}
-
         }
-        #endregion
 
+        #endregion FCS-09 回傳使用者證明(Attestation)
 
-        #region FCS-10  驗證使用者註冊身分(Attestation)  
+        #region FCS-10 驗證使用者註冊身分(Attestation)
+
+        /// <summary>
+        /// FCS-10 驗證使用者註冊身分(Attestation)
+        /// </summary>
+        /// <param name="inputs">提供第三方註冊所需的 JSON 物件</param>
+        /// <returns>返回註冊狀態</returns>
         [HttpPost]
         [Route("api/login/attestation/result")]     //AuthnAttestationResultInput
         public async Task<IHttpActionResult> AuthnAttestationResult(AuthnAttestationResultInput inputs)
         {
-            try 
+            try
             {
                 // 1. get the options we sent the client
                 AuthenticatorAttestationRawResponse aaar = inputs.aarr;
@@ -706,7 +744,6 @@ namespace FarmerPro.Controllers
                 string PK = success.Result.PublicKey.ToString();
                 string CID = success.Result.AttestationClientDataJson.ToString();
 
-
                 var InsertSC = new Credential    //這邊要新增一張表
                 {
                     UserId = userId,
@@ -736,33 +773,35 @@ namespace FarmerPro.Controllers
                 db.SaveChanges();
 
                 // 4. return "ok" to the client
-             var result = new
-            {
-                statusCode = 200,
-                status = "success",
-                message = "註冊成功，請重新登入",
-            };
-            return Content(HttpStatusCode.OK, result.ToString());
+                var result = new
+                {
+                    statusCode = 200,
+                    status = "success",
+                    message = "註冊成功，請重新登入",
+                };
+                return Content(HttpStatusCode.OK, result.ToString());
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 return Content(HttpStatusCode.OK, ex.Message + ex.StackTrace);
             }
-
         }
-        #endregion
 
+        #endregion FCS-10 驗證使用者註冊身分(Attestation)
 
-        #region FCS-11  驗證使用者登入身分(Assertion)   
+        #region FCS-11 驗證使用者登入身分(Assertion)
+
+        /// <summary>
+        /// FCS-11 驗證使用者登入身分(Assertion)
+        /// </summary>
+        /// <param name="inputs">提供第三方登入驗證所需的 JSON 物件</param>
+        /// <returns>返回jwtToken及登入結果</returns>
         [HttpPost]
         [Route("api/login/assertion/result")]
         public async Task<IHttpActionResult> AuthnAssertionResult(AuthnAssertionResultInput inputs)
         {
             try
             {
-
-
-
                 // 1. get the options we sent the client
                 var options = inputs.ao;
                 var AssertionResult = inputs.aarr;
@@ -840,7 +879,7 @@ namespace FarmerPro.Controllers
                     return Content(HttpStatusCode.OK, result);
                 }
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 return Content(HttpStatusCode.OK, ex.Message + ex.StackTrace);
             }
@@ -879,17 +918,18 @@ namespace FarmerPro.Controllers
 
             //    // 7. return OK to client
             //    return this.Ok(res);
-
         }
-        #endregion
 
-        #region FCS-12  Credential Test()   
+        #endregion FCS-11 驗證使用者登入身分(Assertion)
+
+        #region FCS-12 Credential Test()
+
         [HttpGet]
         [Route("api/login/test/test")]
-        public IHttpActionResult TestWebAuthn() 
+        public IHttpActionResult TestWebAuthn()
         {
             var showAllCredential = db.Credential.Where(x => x.UserId == 1)?.FirstOrDefault();
-            if (showAllCredential != null) 
+            if (showAllCredential != null)
             {
                 var result = new
                 {
@@ -909,29 +949,36 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-        #endregion
 
+        #endregion FCS-12 Credential Test()
 
-
-
+        /// <summary>
+        /// 登入者 Token
+        /// </summary>
         public class LoginToken
         {
             public string code { get; set; }
         }
 
+        /// <summary>
+        /// PassKey 登入使用者資料
+        /// </summary>
         public class AuthnUser
         {
             [Required]
             public string inputName { get; set; }
+
             public bool isRegister { get; set; }  // true or false
         }
 
+        /// <summary>
+        /// PassKey 使用者註冊資料
+        /// </summary>
         public class AuthnAttestationResultInput
         {
             public AuthenticatorAttestationRawResponse aarr { get; set; }
             public CredentialCreateOptions ccp { get; set; }
         }
-
 
         public class Otherclass
         {
@@ -941,19 +988,23 @@ namespace FarmerPro.Controllers
 
         //public AuthenticatorAttestationRawResponse aarr { get; set; }
 
+        /// <summary>
+        /// PassKey 使用者登入資料
+        /// </summary>
         public class AuthnAssertionResultInput
         {
             public AuthenticatorAssertionRawResponse aarr { get; set; }
             public AssertionOptions ao { get; set; }
         }
 
-
         public class Fake
         {
             public PublicKeyCredentialRpEntity rp { get; set; }
             public Fido2User user { get; set; }
+
             [JsonConverter(typeof(Base64UrlConverter))]
             public byte[] challenge { get; set; }
+
             public List<PubKeyCredParam> pubKeyCredParams { get; set; }
             public long timeout { get; set; }
             public AttestationConveyancePreference attestation { get; set; }
@@ -968,13 +1019,5 @@ namespace FarmerPro.Controllers
             string base64Url = base64.Replace('+', '-').Replace('/', '_').TrimEnd('=');
             return base64Url;
         }
-
-
     }
 }
-
-
-
-
-
-
