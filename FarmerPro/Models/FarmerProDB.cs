@@ -31,6 +31,8 @@ namespace FarmerPro.Models
 
         public virtual DbSet<OrderFarmer> OrderFarmer { get; set; }
 
+        public virtual DbSet<Credential> Credential { get; set; }
+
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
         }

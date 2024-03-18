@@ -36,5 +36,6 @@ namespace FarmerPro
                 response.End();
             }
         }
+        public static IServiceProvider ServiceLocator { get; set; }
     }
 }
