@@ -29,13 +29,16 @@ namespace FarmerPro
 
             app.UseSwaggerUi(typeof(Startup).Assembly, settings =>
             {
+                // 設置 Swagger UI 的路由為空字串，使其在根路由顯示
+                settings.DocumentPath = "/";
+
                 // 針對 WebAPI，指定路由包含 Action 名稱
                 settings.GeneratorSettings.DefaultUrlTemplate =
                     "api/{controller}/{action}/{id?}";
                 // 加入客製化調整邏輯名稱版本等
                 settings.PostProcess = document =>
                 {
-                    document.Info.Title = "WebAPI : 專案名稱";
+                    document.Info.Title = "WebAPI文件 | 搶鮮購蔬果店商平台";
                 };
                 // 加入 Authorization JWT token 定義
                 settings.GeneratorSettings.DocumentProcessors.Add(new SecurityDefinitionAppender("Bearer", new OpenApiSecurityScheme()

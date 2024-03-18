@@ -39,7 +39,7 @@ namespace FarmerPro.Controllers
 
                 //var cartIdInfo = db.Carts.Where(c => c.UserId == CustomerId && c.IsPay == false).FirstOrDefault().Id;
 
-                var Getcart = db.Carts.FirstOrDefault(c => c.UserId == CustomerId && c.IsPay == false);
+                var Getcart = db.Carts.Where(c => c.UserId == CustomerId && c.IsPay == false);
 
                 if (Getcart == null)
                 {
@@ -53,8 +53,9 @@ namespace FarmerPro.Controllers
                     return Content(HttpStatusCode.OK, result);
                 }
 
-                var cartIdInfo = Getcart.Id;
-                var cartItemProductIds = db.Carts.Where(c => c.UserId == CustomerId && c.IsPay == false).SelectMany(c => c.CartItem).Select(ci => ci.Spec.ProductId);
+                var cartIdInfo = Getcart.FirstOrDefault().Id;
+                var cartItemProductIds = Getcart.SelectMany(c => c.CartItem).Select(ci => ci.Spec.ProductId);
+                //var cartItemProductIds = db.Carts.Where(c => c.UserId == CustomerId && c.IsPay == false).SelectMany(c => c.CartItem).Select(ci => ci.Spec.ProductId);
 
                 var detailProduct = from p in db.Products
                                     join user in db.Users on p.UserId equals user.Id
@@ -192,9 +193,10 @@ namespace FarmerPro.Controllers
         #region FGC-01 加入購物車(要補上購物車數量欄位)
 
         /// <summary>
-        /// FGC-01 加入購物車(要補上購物車數量欄位)
+        /// FGC-01 加入購物車
         /// </summary>
-        /// <param name="input">商品規格、數量、直播Id回傳資料</param>
+        /// <remarks>要補上購物車數量欄位</remarks>
+        /// <param name="input">提供購物車清單的 JSON 物件</param>
         /// <returns>返回購物車清單的 JSON 物件</returns>
         [HttpPost]
         //自定義路由
@@ -264,25 +266,68 @@ namespace FarmerPro.Controllers
                     db.SaveChanges();
 
                     var cartIdInfo = db.Carts.Where(c => c.UserId == CustomerId && c.IsPay == false).FirstOrDefault().Id;
-                    var cartItemInfo = db.CartItems.Where(c => c.CartId == cartIdInfo).GroupBy(gruop => gruop.SpecId)
-                                        .Select(cartItemGruop => new
-                                        {
-                                            productId = cartItemGruop.FirstOrDefault().Spec.ProductId,
-                                            productTitle = cartItemGruop.FirstOrDefault().Spec.Product.ProductTitle, // Spec--Product--Title
-                                            productSpecId = cartItemGruop.Key,
-                                            productSpecSize = cartItemGruop.FirstOrDefault().Spec.Size,
-                                            productSpecWeight = (int)cartItemGruop.FirstOrDefault().Spec.Weight,
-                                            cartItemOriginalPrice = cartItemGruop.FirstOrDefault().Spec.Price,
-                                            cartItemPromotionPrice = cartItemGruop.FirstOrDefault().Spec.PromotePrice,
-                                            cartItemLivePrice = cartItemGruop.FirstOrDefault().IsLivePrice == true ? cartItemGruop.FirstOrDefault().Spec.LivePrice : (decimal?)null,
-                                            cartItemQty = cartItemGruop.Sum(item => item.Qty),
-                                            subtotal = cartItemGruop.Sum(item => item.IsLivePrice == true ? item.Qty * item.Spec.LivePrice : item.Qty * item.Spec.PromotePrice),
-                                            productImg = new
-                                            {
-                                                src = db.Albums.Where(a => a.ProductId == cartItemGruop.FirstOrDefault().Spec.ProductId).FirstOrDefault().Photo.FirstOrDefault().URL ?? null,
-                                                alt = cartItemGruop.FirstOrDefault().Spec.Product.ProductTitle,
-                                            },
-                                        }).ToList();
+                    //var cartItemInfo = db.CartItems.Where(c => c.CartId == cartIdInfo).GroupBy(gruop => gruop.SpecId)
+                    //                    .Select(cartItemGruop => new
+                    //                    {
+                    //                        productId = cartItemGruop.FirstOrDefault().Spec.ProductId,
+                    //                        productTitle = cartItemGruop.FirstOrDefault().Spec.Product.ProductTitle, // Spec--Product--Title
+                    //                        productSpecId = cartItemGruop.Key,
+                    //                        productSpecSize = cartItemGruop.FirstOrDefault().Spec.Size,
+                    //                        productSpecWeight = (int)cartItemGruop.FirstOrDefault().Spec.Weight,
+                    //                        cartItemOriginalPrice = cartItemGruop.FirstOrDefault().Spec.Price,
+                    //                        cartItemPromotionPrice = cartItemGruop.FirstOrDefault().Spec.PromotePrice,
+                    //                        cartItemLivePrice = cartItemGruop.FirstOrDefault().IsLivePrice == true ? cartItemGruop.FirstOrDefault().Spec.LivePrice : (decimal?)null,
+                    //                        cartItemQty = cartItemGruop.Sum(item => item.Qty),
+                    //                        subtotal = cartItemGruop.Sum(item => item.IsLivePrice == true ? item.Qty * item.Spec.LivePrice : item.Qty * item.Spec.PromotePrice),
+                    //                        productImg = new
+                    //                        {
+                    //                            src = db.Albums.Where(a => a.ProductId == cartItemGruop.FirstOrDefault().Spec.ProductId).FirstOrDefault().Photo.FirstOrDefault().URL ?? null,
+                    //                            alt = cartItemGruop.FirstOrDefault().Spec.Product.ProductTitle,
+                    //                        },
+                    //                    }).ToList();
+
+                    var cartItemInfo = db.CartItems.Where(c => c.CartId == cartIdInfo).GroupBy(group => group.SpecId)
+                        .Select(cartItemGroup => new
+                        {
+                            productId = cartItemGroup.FirstOrDefault().Spec.ProductId,
+                            productTitle = cartItemGroup.FirstOrDefault().Spec.Product.ProductTitle,
+                            productSpecId = cartItemGroup.Key,
+                            productSpecSize = cartItemGroup.FirstOrDefault().Spec.Size,
+                            productSpecWeight = (int)cartItemGroup.FirstOrDefault().Spec.Weight,
+                            cartItemOriginalPrice = cartItemGroup.FirstOrDefault().Spec.Price,
+                            cartItemPromotionPrice = cartItemGroup.FirstOrDefault().Spec.PromotePrice,
+                            cartItemLivePrice = cartItemGroup.FirstOrDefault().IsLivePrice == true ? cartItemGroup.FirstOrDefault().Spec.LivePrice : (decimal?)null,
+                            cartItemQty = cartItemGroup.Sum(item => item.Qty),
+                            subtotal = cartItemGroup.Sum(item => item.IsLivePrice == true ? item.Qty * item.Spec.LivePrice : item.Qty * item.Spec.PromotePrice),
+                            productImg = new
+                            {
+                                src = db.Albums.Where(a => a.ProductId == cartItemGroup.FirstOrDefault().Spec.ProductId).FirstOrDefault().Photo.FirstOrDefault().URL ?? null,
+                                alt = cartItemGroup.FirstOrDefault().Spec.Product.ProductTitle,
+                            },
+                        }).ToList();
+
+                    // 累加相同产品 ID 的商品
+                    var distinctProducts = cartItemInfo.GroupBy(item => item.productId)
+                        .Select(group => new
+                        {
+                            productId = group.Key,
+                            productTitle = group.First().productTitle,
+                            productSpecId = group.First().productSpecId,
+                            productSpecSize = group.First().productSpecSize,
+                            productSpecWeight = group.First().productSpecWeight,
+                            cartItemOriginalPrice = group.First().cartItemOriginalPrice,
+                            cartItemPromotionPrice = group.First().cartItemPromotionPrice,
+                            cartItemLivePrice = group.First().cartItemLivePrice,
+                            cartItemQty = group.Sum(item => item.cartItemQty),
+                            subtotal = group.Sum(item => item.subtotal),
+                            productImg = group.First().productImg
+                        }).ToList();
+
+                    // 删除原始内容
+                    cartItemInfo.Clear();
+
+                    // 添加累加后的内容
+                    cartItemInfo.AddRange(distinctProducts);
 
                     //var cartItemQtySum = cartItemInfo.Sum(ci => ci.cartItemQty);商品全部數量
                     //修改成產品種類的數量(用specID groupby)
@@ -339,7 +384,7 @@ namespace FarmerPro.Controllers
         /// <summary>
         /// FGC-03 修改商品數量
         /// </summary>
-        /// <param name="input">商品規格、數量、直播Id回傳資料</param>
+        /// <param name="input">提供購物車清單的 JSON 物件</param>
         /// <returns>返回購物車清單的 JSON 物件</returns>
         [HttpPut]
         //自定義路由
@@ -559,7 +604,7 @@ namespace FarmerPro.Controllers
         /// <summary>
         /// FGC-04 修改商品規格
         /// </summary>
-        /// <param name="input">商品規格、數量、直播Id回傳資料</param>
+        /// <param name="input">提供購物車清單的 JSON 物件</param>
         /// <returns>返回購物車清單的 JSON 物件</returns>
         [HttpPut]
         //自定義路由
@@ -768,7 +813,7 @@ namespace FarmerPro.Controllers
         /// <summary>
         /// FGC-05 刪除特定商品
         /// </summary>
-        /// <param name="input">商品規格、數量、直播Id回傳資料</param>
+        /// <param name="input">提供購物車清單的 JSON 物件</param>
         /// <returns>返回購物車清單的 JSON 物件</returns>
         [HttpDelete]
         //自定義路由
