@@ -44,9 +44,9 @@ namespace FarmerPro.Controllers
         public UserController()
         {
             Fido2Configuration config = new Fido2Configuration();
-            config.ServerDomain = "localhost";//System.Configuration.ConfigurationManager.AppSettings["serverDomain"];
-            config.ServerName = "FIDO2 Test";
-            config.Origins = new HashSet<string>(new[] { @"http://localhost:44364" }); //這邊要改
+            config.ServerDomain = "sun-live.vercel.app";//System.Configuration.ConfigurationManager.AppSettings["serverDomain"];
+            config.ServerName = "FarmerProject";
+            config.Origins = new HashSet<string>(new[] { @"https://sun-live.vercel.app" }); //這邊要改
             config.TimestampDriftTolerance = int.Parse("300000");
             // < add key = "serverDomain" value = "localhost" />
             //< add key = "origins" value = "http://localhost:52363" />
@@ -634,7 +634,7 @@ namespace FarmerPro.Controllers
                             authenticatorSelection,
                             AttestationConveyancePreference.None,
                             exts);
-                    //options.Rp = new PublicKeyCredentialRpEntity(@"http://localhost:3000/","FIDDD")
+                    //options.Rp = new PublicKeyCredentialRpEntity(@"sun-live.vercel.app", "FarmerProject");
                     //{
                     //    Id = "your_rp_id",
                     //    Name = "Your RP Name",
@@ -669,6 +669,7 @@ namespace FarmerPro.Controllers
                         new List<PublicKeyCredentialDescriptor>() { },
                         UserVerificationRequirement.Required,
                         exts);
+                //options.RpId = @"sun-live.vercel.app";
 
                 // 2. Temporarily store options, session/in-memory cache/redis/db
                 //HttpContext.Current.Session.Add("fido2.assertionOptions", options.ToJson());
@@ -779,7 +780,7 @@ namespace FarmerPro.Controllers
                     status = "success",
                     message = "註冊成功，請重新登入",
                 };
-                return Content(HttpStatusCode.OK, result.ToString());
+                return Content(HttpStatusCode.OK, result);
             }
             catch (Exception ex)
             {
