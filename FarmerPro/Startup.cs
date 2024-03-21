@@ -1,4 +1,5 @@
 ﻿using Microsoft.Owin;
+using Microsoft.Owin.Security.OAuth;
 using NSwag;
 using NSwag.AspNet.Owin;
 using NSwag.Generation.Processors.Security;
@@ -30,7 +31,7 @@ namespace FarmerPro
             app.UseSwaggerUi(typeof(Startup).Assembly, settings =>
             {
                 // 設置 Swagger UI 的路由為空字串，使其在根路由顯示
-                settings.DocumentPath = "/";
+                //settings.DocumentPath = "/";
 
                 // 針對 WebAPI，指定路由包含 Action 名稱
                 settings.GeneratorSettings.DefaultUrlTemplate =
@@ -55,6 +56,22 @@ namespace FarmerPro
             app.UseWebApi(config);
             config.MapHttpAttributeRoutes();
             config.EnsureInitialized();
+        }
+
+        /// <summary>
+        /// 啟用跨域及驗證配置
+        /// </summary>
+        /// <param name="app"></param>
+        private void ConfigureAuth(IAppBuilder app)
+        {
+            //// 建立 OAuth 配置
+            //var oAuthOptions = new OAuthAuthorizationServerOptions
+            //{
+            //    Provider = new AuthorizationServerProvider()
+            //};
+
+            //// 啟用 OAuth2 bearer tokens 驗證並加入配置
+            //app.UseOAuthAuthorizationServer(oAuthOptions);
         }
     }
 }
