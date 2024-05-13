@@ -43,7 +43,7 @@
 <hr/>
 
 
-## 功能介紹
+<h2 align="center" >功能介紹</h2>
 
 > 註冊之後可以依據所選擇的身份分為「一般會員」及「小農」角色
 
@@ -78,51 +78,69 @@
 - 主持直播間並進行多對多即時聊天
 
 
----
-## Git 規範
-### Commit
-| 類型 | 格式 | 說明 |
-| :---: | :---: | :--- |
-| 新增功能 | add | 新增功能 |
-| 更新功能 | update | 更新現有功能 |
-| 修補錯誤 | fix | 修正現有功能的錯誤 |
-| 重構程式 | refactor | 重構。針對已上線的功能程式碼調整與優化，且不改變記有邏輯。 |
-| 樣式相關 | style | 程式碼格式調整 (不影響程式碼運行的變動) |
-| 維護資料 | chore | 更新專案建置設定、更新版本號等。 |
-### Branch
-| 類型 | 格式 |
-| :---: | :---: |
-| 新增功能 | feature-[branch name] |
-| 更新功能 | update-[branch name] |
-| 重構功能 | refactor-[branch name] |
-| 修正功能 | fix-[branch name] |
-| 緊急修復 | hotfix-[branch name] |
-<hr/>
-
-
-
-## 技術規格 
-<h2 align="center">後端技術</h2>
+<h2 align="center">團隊協作</h2>
+<h3>► 後端 (Back-End)</h3>
  <p>
- <img alt="Visual_Studio" src="https://img.shields.io/badge/Visual_Studio-5C2D91?style=for-the-badge&logo=visual%20studio&logoColor=white" />
-  <img alt=".NET" src="https://img.shields.io/badge/.NET-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" />
-  <img alt="C#" src="https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white" />
-  <img alt="SQL" src="https://img.shields.io/badge/Microsoft%20SQL%20Server-CC2927?style=for-the-badge&logo=microsoft%20sql%20server&logoColor=white" />
-  <img alt="Azure" src="https://img.shields.io/badge/microsoft%20azure-0089D6?style=for-the-badge&logo=microsoft-azure&logoColor=white" />
-  <img alt="SignalR" src="https://img.shields.io/badge/SignalR-007ACC?style=for-the-badge&logoColor=white" />
-  <img alt="GIT" src="https://img.shields.io/badge/GIT-E44C30?style=for-the-badge&logo=git&logoColor=white" />
-  <img alt="GItHUB" src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" />
-  <img alt="POSTMAN" src="https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=Postman&logoColor=white" />
- 
-  ### 後端框架與結構：
 
-* 開發環境：Microsoft Visual Studio
-    * 架構：使用的.net Freamwork 4.7.2 版本。
+* 後端開發環境：
+    * 框架：.NET Framework 4.7.2
     * 專案：ASP.NET Web API 2
+      
+* 後端開發技術：
+  <div align="center">
+    <img alt="Visual_Studio" src="https://img.shields.io/badge/Visual_Studio-5C2D91?style=for-the-badge&logo=visual%20studio&logoColor=white" />
+    <img alt=".NET" src="https://img.shields.io/badge/.NET-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" />
+    <img alt="C#" src="https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white" />
+    <img alt="SQL" src="https://img.shields.io/badge/Microsoft%20SQL%20Server-CC2927?style=for-the-badge&logo=microsoft%20sql%20server&logoColor=white" />
+    <img alt="Entity_Framework" src="https://img.shields.io/badge/Entity_Framework-yellow?style=for-the-badge">
+    <img alt="LINQ" src="https://img.shields.io/badge/LINQ-8A2BE2?style=for-the-badge">
+  </div>
+  <div align="center">
+    <img alt="Azure" src="https://img.shields.io/badge/microsoft%20azure-0089D6?style=for-the-badge&logo=microsoft-azure&logoColor=white" />
+    <img alt="SignalR" src="https://img.shields.io/badge/SignalR-007ACC?style=for-the-badge&logoColor=white" />
+    <img alt="GIT" src="https://img.shields.io/badge/GIT-E44C30?style=for-the-badge&logo=git&logoColor=white" />
+    <img alt="GitHUB" src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" />
+    <img alt="POSTMAN" src="https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=Postman&logoColor=white" />
+    <img alt="OAuth2.0" src="https://img.shields.io/badge/OAuth_2.0-black?style=for-the-badge">
+    <img alt="Passkey" src="https://img.shields.io/badge/Passkey-gray?style=for-the-badge&logo=webauthn">
+    <img alt="Youtube" src="https://img.shields.io/badge/Youtube-FF0000?style=for-the-badge&logo=youtubestudio">
+  </div>
+  
+  - 資料庫存取：Microsoft SQL Server 搭配 Entity Framework Code First 以及 LINQ 進行資料庫存取
+  
+  - 雲端服務：Azure 上建立虛擬機(VM)，並於 VM 上建立 SQL Server 與 IIS 環境，部屬 Web API Application
 
-* 專案結構：
+  - 即時通訊：透過 SignalR 建立後端 Hub，完成與前端(Client-Side)的 1-1 與 1-多的即時通訊功能
+  
+  - 線上串流：介接 Youtube Api，達成個人直播串流服務
+ 
+  - 登入服務：多元登入服務，包含信件無密碼登入、OAuth2.0 Google 第三方登入以及 Passkey 非對稱加密登入
+
+* 後端協作 Git 規範：
+  * Commit
+
+
+    | 類型 | 格式 | 說明 |
+    | :---: | :---: | :---: |
+    | 新增功能 | Feat | 新增功能 |
+    | 更新功能 | Update | 更新現有功能、程式碼格式調整 |
+
+
+  * Branch
+
+
+    | 類型 | 格式 |
+    | :---: | :---: |
+    | 開發功能 | Dev |
+    | 新增功能 | Feature-[branch name] |
+    | 更新功能 | Update-[branch name] |
+
+
+  * Git Flow
+
+* 後端專案結構：
 ```
-Farmer_Project
+SunLive_Backend_Project
 │  chathub.cs
 │  FarmerPro.csproj
 │  FarmerPro.csproj.user
@@ -233,23 +251,12 @@ Farmer_Project
             Error.cshtml
             _Layout.cshtml
 ```
-* 資料庫：Microsoft SQL Server
-    * 關聯性資料庫管理系統，用於記錄數據、查詢資料等。
-
-* 技術：SignalR
-    * 此為Microsoft所開發的套件，針對即時通訊應用提供包裹性解決方案。
-
-* 雲端伺服器：Azure
-    * Microsoft提供一個雲端平台，選擇虛擬機台進行後端伺服器資源部署。
 
 </p>
-
-<h2 align="center">前端技術</h2>
+<hr/>
+<h3>► 前端 (Front-End)</h3>
 <p>
   
-
-### 技術說明：
-
 * 開發環境：Next.js
     * 使用Next.js的SSR，可以在伺服器上完整渲染 HTML 頁面，除了有更好的 SEO 和更快的頁面加載速度，同時預先渲染的頁面，提升使用者體驗。
 
@@ -266,11 +273,8 @@ Farmer_Project
     * 選擇Vercel來進行部署，提供高度的穩定性和優化的整合體驗，實現快速的自動化部署流程，簡化開發到上線的過程。
 </p>
 
-
-<h2 align="center">設計工具</h2>
+<h3>► 設計端 (Design)</h3>
  <p>
- 
-  ### 工具說明：
 
 * 設計稿製作：Figma
     * 用於製作線稿、精稿及 prototype。
