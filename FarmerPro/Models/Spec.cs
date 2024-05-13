@@ -37,17 +37,17 @@ namespace FarmerPro.Models
         [Display(Name = "建立時間")]
         public DateTime CreateTime { get; set; } = DateTime.Now;
 
-        [Display(Name = "商品")]//鍵結主鍵名
+        [Display(Name = "商品")]
         public int ProductId { get; set; }
 
-        [JsonIgnore]//不會產生無限迴圈
-        [ForeignKey("ProductId")]//本表外鍵名
+        [JsonIgnore]
+        [ForeignKey("ProductId")]
         public virtual Product Product { get; set; }
 
         [Display(Name = "訂單明細")]
         public virtual ICollection<OrderDetail> OrderDetail { get; set; }
 
-        [Display(Name = "購物車商品列表")]//其他表-外鍵
+        [Display(Name = "購物車商品列表")]
         public virtual ICollection<CartItem> CartItem { get; set; }
 
         [Display(Name = "銷量")]
