@@ -58,13 +58,12 @@ namespace FarmerPro.Models
 
         [Display(Name = "使用者")]
         public int UserId { get; set; }
+
         [JsonIgnore]
         [ForeignKey("UserId")]
         public virtual User Users { get; set; }
 
-
         [Display(Name = "種類")]
         public virtual ICollection<Spec> Spec { get; set; }
-
     }
 }
