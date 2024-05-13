@@ -50,8 +50,6 @@ namespace FarmerPro.Controllers
                 }
                 else
                 {
-                    //order內specId的spec->productId->userId == OrderFarmer的userId == farmerId
-                    // 小農個人訂單+出貨狀態
                     var orderInfo = db.OrderFarmer.AsEnumerable().Where(of => of.UserId == farmerId).Select(of => new
                     {
                         orderFarmerId = of.Id,
@@ -63,19 +61,8 @@ namespace FarmerPro.Controllers
                     })
                     .ToList();
 
-                    //var orderbyfarmerInfo = db.OrderFarmer.Where(of => of.UserId == 2).SelectMany(of => of.Order.OrderDetail)
-                    //                        .Select(od => new
-                    //                        {
-                    //                            orderId = od.OrderId,
-                    //                            farmerUserId = od.Spec.Product.UserId,
-                    //                            specId = od.SpecId,
-                    //                            subtotal = od.SubTotal
-                    //                        })
-                    //                        .Where(sel => sel.farmerUserId == 2)  // 篩選出farmerId商品
-                    //                        .ToList();
-
                     var orderbyfarmerInfo = db.OrderFarmer.Where(of => of.UserId == farmerId).SelectMany(of => of.Order.OrderDetail).Where(od => od.Spec.Product.UserId == farmerId)
-                                            .GroupBy(od => od.OrderId)  // 按 orderId 進行分組
+                                            .GroupBy(od => od.OrderId)
                                             .Select(group => new
                                             {
                                                 orderId = group.Key,
@@ -98,7 +85,6 @@ namespace FarmerPro.Controllers
 
                     if (!orderbyfarmerall.Any())
                     {
-                        //result訊息
                         var getOrder = new
                         {
                             statusCode = 200,
@@ -109,10 +95,7 @@ namespace FarmerPro.Controllers
                         return Content(HttpStatusCode.OK, getOrder);
                     }
                     else
-                    {
-                        //var userNickName = (from order in db.Orders
-                        //                    join u in db.Users on order.UserId equals user.Id
-                        //                    select user.NickName).FirstOrDefault();
+                    { 
                         var result = new
                         {
                             statusCode = 200,
@@ -135,8 +118,6 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-
-        //userId==2 的商品，prom的價格
 
         #endregion BFO-04 取得小農各自訂單清單(拆各別小農)
 
@@ -173,7 +154,6 @@ namespace FarmerPro.Controllers
 
                     if (order == null)
                     {
-                        //result訊息
                         var getOrder = new
                         {
                             statusCode = 402,
@@ -184,15 +164,13 @@ namespace FarmerPro.Controllers
                     }
                     else
                     {
-                        //查詢orderbyfarmer
                         var orderbyfarmer = db.OrderFarmer.FirstOrDefault(o => o.Id == orderFarmerId);
                         if (orderbyfarmer != null)
                         {
                             orderbyfarmer.ShipmentFarmer = !orderbyfarmer.ShipmentFarmer;
                             db.SaveChanges();
                         }
-                        //要同時判斷orderId底下的ShipmentFarmer都按下出貨，order的shipment才能顯示出貨
-                        //在order.orderfarmer.ShipmentFarmer做判斷，只要有其中一個是false就不會將order.Shipment==true
+
                         var allShipment = db.OrderFarmer.Where(o => o.OrderId == orderbyfarmer.OrderId).All(of => of.ShipmentFarmer);
                         if (allShipment)
                         {
@@ -203,7 +181,6 @@ namespace FarmerPro.Controllers
                                 db.SaveChanges();
                             }
 
-                            //進行WS的message傳送
                             var hubsocket = GlobalHost.ConnectionManager.GetHubContext<chathub>();
                             int id = db.Orders.Where(x => x.Id == orderbyfarmer.OrderId).FirstOrDefault().UserId;
                             string connectionId = "";
