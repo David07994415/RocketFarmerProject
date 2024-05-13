@@ -22,22 +22,18 @@ namespace FarmerPro.Controllers
     {
         private FarmerProDB db = new FarmerProDB();
 
-        //已經測試性修正，需要把ID改回來
-
         #region FCW-01 創造並加入特定聊天室(取得聊天訊息)
-
         /// <summary>
         /// FCW-01 創造並加入特定聊天室(取得聊天訊息)
         /// </summary>
         /// <param name="input">提供訊息接收者Id</param>
         /// <returns>返回聊天室的 JSON 物件</returns>
         [HttpPost]
-        //[Route("api/chats/joinroom/{senderId}/{receiverId}")] //測試用途
-        [Route("api/chats/joinroom")] //正式用途
+        //[Route("api/chats/joinroom/{senderId}/{receiverId}")] // for testing purpose 測試用途
+        [Route("api/chats/joinroom")]
         [JwtAuthFilter]
-        public IHttpActionResult chatroomjoin(userChatroomcheck input) //(userChatroomcheck input) //正式用途
-        {                                                          //測試用途(int senderId, int receiverId)
-            //以下三行為正式用途
+        public IHttpActionResult chatroomjoin(userChatroomcheck input)   //測試用途(int senderId, int receiverId)
+        {  
             var jwtObject = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
             int senderId = (int)jwtObject["Id"];
             int receiverId = input.receiverId;
@@ -48,7 +44,7 @@ namespace FarmerPro.Controllers
             {
                 if (sendercategorycheck.Category == UserCategory.一般會員) { senderIsUser = true; }
             }
-            if (senderIsUser == true) //使用者為一般會員=>senderId，小農=>receiverId
+            if (senderIsUser == true) // 使用者為一般會員=>senderId，小農=>receiverId
             {
                 var HaveRoom = db.ChatRooms.
                 Where(room => room.UserIdOwner == senderId && room.UserIdTalker == receiverId)?.FirstOrDefault();
@@ -60,9 +56,7 @@ namespace FarmerPro.Controllers
                         UserIdOwner = senderId,
                         UserIdTalker = receiverId,
                     };
-                    // 將 newaccount 加入 User 集合
                     db.ChatRooms.Add(newRoomSet);
-                    // 執行資料庫儲存變更操作
                     db.SaveChanges();
                     roomId = newRoomSet.Id;
                 }
@@ -95,11 +89,10 @@ namespace FarmerPro.Controllers
 
                         sendDate = x.CreatTime.Date.ToString("MM/dd"),
                         sendTime = x.CreatTime.ToString("HH:mm"),
-                        //isRead=x.IsRead,
+                        // isRead=x.IsRead,
                     }).ToList()
                 };
-
-                //將小農傳送給使用者的訊息變成已讀狀態
+                // 將小農傳送給使用者的訊息變成已讀狀態
                 var ChageMessageRead = db.Records.Where(x => x.ChatRoomId == roomId && x.UserIdSender == receiverId).AsEnumerable();
                 foreach (var item in ChageMessageRead)
                 {
@@ -109,7 +102,7 @@ namespace FarmerPro.Controllers
 
                 return Content(HttpStatusCode.OK, result);
             }
-            else //使用者為小農  senderId=>小農，receiverId=>一般使用者
+            else // 使用者為小農  senderId=>小農，receiverId=>一般使用者
             {
                 var HaveRoom = db.ChatRooms.
                Where(room => room.UserIdOwner == receiverId && room.UserIdTalker == senderId)?.FirstOrDefault();
@@ -121,9 +114,7 @@ namespace FarmerPro.Controllers
                         UserIdOwner = receiverId,
                         UserIdTalker = senderId,
                     };
-                    // 將 newaccount 加入 User 集合
                     db.ChatRooms.Add(newRoomSet);
-                    // 執行資料庫儲存變更操作
                     db.SaveChanges();
                     roomId = newRoomSet.Id;
                 }
@@ -158,7 +149,7 @@ namespace FarmerPro.Controllers
                         //readStatus=x.IsRead,
                     }).ToList()
                 };
-                //將使用者傳送給小農的訊息變成已讀狀態
+                // 將使用者傳送給小農的訊息變成已讀狀態
                 var ChageMessageRead = db.Records.Where(x => x.ChatRoomId == roomId && x.UserIdSender == receiverId).AsEnumerable();
                 foreach (var item in ChageMessageRead)
                 {
@@ -169,11 +160,9 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-
         #endregion FCW-01 創造並加入特定聊天室(取得聊天訊息)
 
         #region FCW-02 傳送並存取聊天資訊
-
         /// <summary>
         /// FCW-02 傳送並存取聊天資訊
         /// </summary>
@@ -183,8 +172,6 @@ namespace FarmerPro.Controllers
         [Route("api/chats/roommessages")]
         public async Task<IHttpActionResult> chatsendmessage(ChatSendMessageCheck input)
         {
-            //var jwtObject = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
-            //int senderId = (int)jwtObject["Id"];
             string categlory = "";
             if (db.Users.Where(x => x.Id == input.userIdSender).FirstOrDefault().Category == UserCategory.小農) { categlory = "小農"; }
             else { categlory = "會員"; };
@@ -209,14 +196,11 @@ namespace FarmerPro.Controllers
                     ChatRoomId = input.chatroomId,
                     IsRead = false
                 };
-                // 將 newaccount 加入 User 集合
                 db.Records.Add(newRoomSet);
-                // 執行資料庫儲存變更操作
                 db.SaveChanges();
 
-                ////進行WS的message傳送
+                // 進行WS的message傳送
                 var hubsocket = GlobalHost.ConnectionManager.GetHubContext<chathub>();
-                //await hubsocket.Clients.All.receiveMessage(hubsocket);
                 if (categlory == "小農")
                 {
                     int id = db.ChatRooms.Where(x => x.Id == input.chatroomId).FirstOrDefault().UserIdOwner;
@@ -224,26 +208,21 @@ namespace FarmerPro.Controllers
                     if (GlobalVariable._userList.ContainsKey(id.ToString()))
                     {
                         connectionId = GlobalVariable._userList[id.ToString()];
-                        //hubsocket.Clients.Client(connectionId).SendAsync("notifyMessage", "您有未讀訊息");
                         await hubsocket.Clients.Client(connectionId).notifyMessage("您有未讀訊息");
-                        //await hubsocket.Clients.Client(connectionId).notifyMessage($"userId為:{GlobalVariable._userList[id.ToString()]}，socketId為:{connectionId}");
                     }
                 }
-                else //使用者是一般用戶
+                else // 使用者是一般用戶
                 {
                     int id = db.ChatRooms.Where(x => x.Id == input.chatroomId).FirstOrDefault().UserIdTalker;
                     string connectionId = "";
                     if (GlobalVariable._userList.ContainsKey(id.ToString()))
                     {
                         connectionId = GlobalVariable._userList[id.ToString()];
-                        //hubsocket.Clients.Client(connectionId).SendAsync("notifyMessage", "您有未讀訊息");
                         await hubsocket.Clients.Client(connectionId).notifyMessage("您有未讀訊息");
-                        // await hubsocket.Clients.Client(connectionId).notifyMessage($"userId為:{GlobalVariable._userList[id.ToString()]}，socketId為:{connectionId}");
                     }
                 };
 
                 var messageReturn = db.Records.Where(x => x.ChatRoomId == input.chatroomId).AsEnumerable();
-
                 var result = new
                 {
                     statusCode = 200,
@@ -265,11 +244,9 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-
         #endregion FCW-02 傳送並存取聊天資訊
 
         #region FCW-03 取得聊天室清單(要回傳小農Id給前端)
-
         /// <summary>
         /// FCW-03 取得聊天室清單(要回傳小農Id給前端)
         /// </summary>
@@ -295,7 +272,7 @@ namespace FarmerPro.Controllers
             }
             else
             {
-                if (usercheck.Category == UserCategory.小農) //使用者為小農
+                if (usercheck.Category == UserCategory.小農) // 使用者為小農
                 {
                     var checklist = db.ChatRooms.Where(x => x.UserIdTalker == userId)?.AsEnumerable();
                     if (checklist != null)
@@ -332,7 +309,7 @@ namespace FarmerPro.Controllers
                         return Content(HttpStatusCode.OK, result);
                     }
                 }
-                else //使用者為客戶
+                else // 使用者為客戶
                 {
                     var checklist = db.ChatRooms.Where(x => x.UserIdOwner == userId)?.AsEnumerable();
                     if (checklist != null)
@@ -371,7 +348,6 @@ namespace FarmerPro.Controllers
                 }
             }
         }
-
         #endregion FCW-03 取得聊天室清單(要回傳小農Id給前端)
 
         //#region FCW-04 傳送單筆直播聊天資訊
@@ -467,7 +443,6 @@ namespace FarmerPro.Controllers
         #endregion FCW-05 取得使用者聊天室個人資訊
 
         #region FCW-07 取得單一使用者未讀訊息通知
-
         /// <summary>
         /// FCW-07 取得單一使用者未讀訊息通知
         /// </summary>
@@ -523,7 +498,7 @@ namespace FarmerPro.Controllers
                             };
                             return Content(HttpStatusCode.OK, result);
                         }
-                        else     //該小農具有未讀訊息
+                        else     // 該小農具有未讀訊息
                         {
                             var result = new
                             {
@@ -546,7 +521,7 @@ namespace FarmerPro.Controllers
                         return Content(HttpStatusCode.OK, result);
                     }
                 }
-                else //使用者為客戶
+                else // 使用者為客戶
                 {
                     var checklist = db.ChatRooms.Where(x => x.UserIdOwner == userId)?.AsEnumerable();
                     if (checklist != null)
@@ -565,7 +540,7 @@ namespace FarmerPro.Controllers
                             }
                             if (HaveUnReadMessage == true) { break; }
                         }
-                        if (HaveUnReadMessage == false)  //該使用者沒有未讀訊息
+                        if (HaveUnReadMessage == false)  // 該使用者沒有未讀訊息
                         {
                             var result = new
                             {
@@ -576,7 +551,7 @@ namespace FarmerPro.Controllers
                             };
                             return Content(HttpStatusCode.OK, result);
                         }
-                        else     //該使用者具有未讀訊息
+                        else     // 該使用者具有未讀訊息
                         {
                             var result = new
                             {
@@ -601,7 +576,6 @@ namespace FarmerPro.Controllers
                 }
             }
         }
-
         #endregion FCW-07 取得單一使用者未讀訊息通知
     }
 
