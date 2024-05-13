@@ -28,7 +28,6 @@ namespace FarmerPro.Controllers
         private FarmerProDB db = new FarmerProDB();
 
         #region BFI-01 上傳小農頭貼圖片(單張，及時渲染，有PUT功能)
-
         /// <summary>
         /// BFI-01 上傳小農頭貼圖片(單張，及時渲染，有PUT功能)
         /// </summary>
@@ -39,16 +38,20 @@ namespace FarmerPro.Controllers
         [JwtAuthFilter]
         public async Task<IHttpActionResult> UploadfarmerInforphoto()
         {
-            // 解密後會回傳 Json 格式的物件 (即加密前的資料)
             var jwtObject = JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter);
             int FarmerId = (int)jwtObject["Id"];
-
             var userExist = db.Users.Where(x => x.Id == FarmerId)?.FirstOrDefault();
 
             // 檢查請求是否包含 multipart/form-data.
             if (!Request.Content.IsMimeMultipartContent())
             {
-                throw new HttpResponseException(HttpStatusCode.UnsupportedMediaType);
+                var resultfileType = new
+                {
+                    statusCode = 408,
+                    status = "error",
+                    message = "上傳格式有誤",
+                };
+                return Content(HttpStatusCode.OK, resultfileType);
             }
             if (userExist == null)
             {
@@ -87,7 +90,7 @@ namespace FarmerPro.Controllers
                     foreach (var content in provider.Contents) //檢查附檔名類型
                     {
                         string fileNameData = content.Headers.ContentDisposition.FileName.Trim('\"');
-                        string fileType = fileNameData.Remove(0, fileNameData.LastIndexOf('.')).ToLower(); // .jpg
+                        string fileType = fileNameData.Remove(0, fileNameData.LastIndexOf('.')).ToLower();
                         if (fileType != ".jpg" && fileType != ".jpeg" && fileType != ".png")
                         {
                             var resultfileType = new
@@ -101,14 +104,12 @@ namespace FarmerPro.Controllers
                     }
 
                     List<string> imglList = new List<string>();
-                    //遍歷 provider.Contents 中的每個 content，處理多個圖片檔案
+                    //foreach provider.Contents 中的每個 content，處理多個圖片檔案
                     foreach (var content in provider.Contents)
                     {
                         // 取得檔案副檔名
                         string fileNameData = content.Headers.ContentDisposition.FileName.Trim('\"');
-                        string fileType = fileNameData.Remove(0, fileNameData.LastIndexOf('.')); // .jpg
-
-                        // 定義檔案名稱
+                        string fileType = fileNameData.Remove(0, fileNameData.LastIndexOf('.'));
                         string fileName = FarmerId.ToString() + DateTime.Now.ToString("yyyyMMddHHmmssfff") + fileType;
 
                         // 儲存圖片
@@ -118,13 +119,6 @@ namespace FarmerPro.Controllers
                         {
                             await output.WriteAsync(fileBytes, 0, fileBytes.Length);
                         }
-
-                        //// 載入原始圖片，直接存入伺服器(未裁切)
-                        //using (var image = Image.Load<Rgba32>(outputPath))
-                        //{
-                        //    // 儲存裁切後的圖片
-                        //    image.Save(outputPath);
-                        //}
 
                         // 載入原始圖片，調整圖片大小
                         using (var image = Image.Load<Rgba32>(outputPath))
@@ -141,11 +135,8 @@ namespace FarmerPro.Controllers
                                 // 檢查檔案大小是否超過限制
                                 if (currentFileSize > maxFileSizeInBytes)
                                 {
-                                    // 如果超過，可能需要進一步調整，或者進行其他處理
-                                    // 這裡僅僅是一個簡單的示例，實際應用可能需要更複雜的處理邏輯
-                                    //// 設定裁切尺寸
-                                    int MaxWidth = 800;   // 先設定800px
-                                    int MaxHeight = 600;  // 先設定600px
+                                    int MaxWidth = 800;   // 設定800px
+                                    int MaxHeight = 600;  // 設定600px
 
                                     // 裁切圖片
                                     image.Mutate(x => x.Resize(new ResizeOptions
@@ -156,7 +147,6 @@ namespace FarmerPro.Controllers
                                 }
                                 else { }
                             }
-                            // 儲存後的圖片
                             image.Save(outputPath);
                         }
                         //加入至List
@@ -164,15 +154,11 @@ namespace FarmerPro.Controllers
                         string url = WebConfigurationManager.AppSettings["Serverurl"].ToString() + $"/upload/farmer/thumbnail/{FarmerId}/" + fileName;
                         imglList.Add(url);
                     }
-
-                    //可以補上清空資料夾的特定圖片資料
                     userExist.Photo = imglList[1];
-                    //可以補上照片名稱的資料庫欄位
                     db.SaveChanges();
 
                     //撈取使用者相片資料庫
                     var checkUserInfor = db.Users.Where(x => x.Id == FarmerId)?.FirstOrDefault();
-
                     var result = new
                     {
                         statusCode = 200,
@@ -186,25 +172,21 @@ namespace FarmerPro.Controllers
                     };
                     return Content(HttpStatusCode.OK, result);
                 }
-                catch (DbEntityValidationException ex)
+                catch
                 {
-                    // Handle entity validation errors
-                    var errorMessages = ex.EntityValidationErrors
-                        .SelectMany(x => x.ValidationErrors)
-                        .Select(x => x.ErrorMessage);
-
-                    var fullErrorMessage = string.Join("; ", errorMessages);
-                    var exceptionMessage = string.Concat(ex.Message, " The validation errors are: ", fullErrorMessage);
-
-                    return BadRequest(exceptionMessage);
+                    var resultfileType = new
+                    {
+                        statusCode = 408,
+                        status = "error",
+                        message = "上傳格式有誤",
+                    };
+                    return Content(HttpStatusCode.OK, resultfileType);
                 }
             }
         }
-
         #endregion BFI-01 上傳小農頭貼圖片(單張，及時渲染，有PUT功能)
 
         #region BFI-02 修改小農個人資訊頁
-
         /// <summary>
         /// BFI-02 修改小農個人資訊頁
         /// </summary>
@@ -231,9 +213,8 @@ namespace FarmerPro.Controllers
                 {
                     int farmerId = Convert.ToInt16(JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter)["Id"]);
                     var getUserInfor = db.Users.Where(x => x.Id == farmerId)?.FirstOrDefault();
-                    if (getUserInfor == null)
+                    if (getUserInfor == null)  // 若沒有此小農用戶
                     {
-                        // 沒有此小農用戶
                         var result = new
                         {
                             statusCode = 402,
@@ -242,7 +223,7 @@ namespace FarmerPro.Controllers
                         };
                         return Content(HttpStatusCode.OK, result);
                     }
-                    else
+                    else  // 若已經有建立小農用戶
                     {
                         getUserInfor.NickName = input.nickName;
                         getUserInfor.Phone = input.phone;
@@ -251,8 +232,6 @@ namespace FarmerPro.Controllers
                         db.SaveChanges();
 
                         var getUpdateUserInfor = db.Users.Where(x => x.Id == farmerId)?.FirstOrDefault();
-
-                        // 已經有建立小農用戶
                         var result = new
                         {
                             statusCode = 200,
@@ -283,11 +262,9 @@ namespace FarmerPro.Controllers
                 }
             }
         }
-
         #endregion BFI-02 修改小農個人資訊頁
 
         #region BFI-03 取得小農個人資訊頁
-
         /// <summary>
         /// BFI-03 取得小農個人資訊頁
         /// </summary>
@@ -302,9 +279,8 @@ namespace FarmerPro.Controllers
             {
                 int farmerId = Convert.ToInt16(JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter)["Id"]);
                 var getUserInfor = db.Users.Where(x => x.Id == farmerId)?.FirstOrDefault();
-                if (getUserInfor == null)
+                if (getUserInfor == null) // 若沒有此小農用戶
                 {
-                    // 沒有此小農用戶
                     var result = new
                     {
                         statusCode = 401,
@@ -313,9 +289,8 @@ namespace FarmerPro.Controllers
                     };
                     return Content(HttpStatusCode.OK, result);
                 }
-                else
+                else  // 若已經有建立小農用戶
                 {
-                    // 已經有建立小農用戶
                     var result = new
                     {
                         statusCode = 200,
@@ -345,7 +320,6 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-
         #endregion BFI-03 取得小農個人資訊頁
     }
 
