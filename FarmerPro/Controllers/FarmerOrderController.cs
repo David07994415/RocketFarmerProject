@@ -63,7 +63,6 @@ namespace FarmerPro.Controllers
 
                     if (!orderInfo.Any())
                     {
-                        //result訊息
                         var getOrder = new
                         {
                             statusCode = 200,
@@ -75,9 +74,6 @@ namespace FarmerPro.Controllers
                     }
                     else
                     {
-                        //var userNickName = (from order in db.Orders
-                        //                    join u in db.Users on order.UserId equals user.Id
-                        //                    select user.NickName).FirstOrDefault();
                         var result = new
                         {
                             statusCode = 200,
@@ -136,7 +132,6 @@ namespace FarmerPro.Controllers
 
                     if (order == null)
                     {
-                        //result訊息
                         var getOrder = new
                         {
                             statusCode = 402,
@@ -150,7 +145,6 @@ namespace FarmerPro.Controllers
                         order.Shipment = !order.Shipment;
                         db.SaveChanges();
 
-                        //進行WS的message傳送
                         var hubsocket = GlobalHost.ConnectionManager.GetHubContext<chathub>();
                         int id = db.Orders.Where(x => x.Id == orderId).FirstOrDefault().UserId;
                         string connectionId = "";
@@ -165,7 +159,6 @@ namespace FarmerPro.Controllers
                             statusCode = 200,
                             status = "success",
                             message = $"訂單狀態更新成功",
-                            //message = $"訂單狀態更新成功，SID:{connectionId},userID:{id}",
                         };
                         return Content(HttpStatusCode.OK, result);
                     }
