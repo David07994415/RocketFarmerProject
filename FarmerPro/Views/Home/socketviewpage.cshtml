@@ -13,11 +13,8 @@
     <script>
         $(function () {
 
-            //$.connection.hub.url = "/signalr";
-            console.log($.connection.hub.url);
-
             var chat = $.connection.chathub;
-            console.log(chat);
+            // 可以進行 console.log(chat);
 
             $.connection.hub.start().done(function () {
                 // 連接成功，你可以在這裡進行額外的初始化
@@ -29,18 +26,15 @@
                 console.log(message);
             };
 
+            // For WS Testing Purpose：
             chat.client.broadcastMessage = function (message) {
-                // Append the message to the 'inputsWS' div using <p> tags
                 $('#inputsWS').append('<p>' + message + '</p>');
             };
-
-
             $("#sendButton").click(function () {
                 var message = $("#messageInput").val();
                 chat.server.send(message);
-                // $('#inputsWS').append('<p>' + message + '</p>');
-                //console.log(message);
             });
+
         });
     </script>
     <title></title>
