@@ -44,15 +44,10 @@ namespace FarmerPro.Models
         [Display(Name = "建立時間")]
         public DateTime CreatTime { get; set; } = DateTime.Now;
 
-
-        [Display(Name = "使用者Id")]  // 先不要設定為外鍵
+        [Display(Name = "使用者Id")] 
         public int UserId { get; set; }
-        //[JsonIgnore]//不會產生無限迴圈
-        //[ForeignKey("UserId")]//本表外鍵名
-        //public virtual User Users { get; set; }
 
-
-        [Display(Name = "直播產品")]//其他表-外鍵
+        [Display(Name = "直播產品")]
         public virtual ICollection<LiveProduct> LiveProduct { get; set; }
     }
 }
