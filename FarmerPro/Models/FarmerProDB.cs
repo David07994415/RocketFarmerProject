@@ -17,7 +17,6 @@ namespace FarmerPro.Models
         public virtual DbSet<Spec> Specs { get; set; }
         public virtual DbSet<LiveSetting> LiveSettings { get; set; }
         public virtual DbSet<LiveProduct> LiveProducts { get; set; }
-
         public virtual DbSet<Album> Albums { get; set; }
         public virtual DbSet<Photo> Photos { get; set; }
         public virtual DbSet<Order> Orders { get; set; }
@@ -26,13 +25,9 @@ namespace FarmerPro.Models
         public virtual DbSet<CartItem> CartItems { get; set; }
         public virtual DbSet<ChatRoom> ChatRooms { get; set; }
         public virtual DbSet<Record> Records { get; set; }
-
         public virtual DbSet<LiveAlbum> LiveAlbum { get; set; }
-
         public virtual DbSet<OrderFarmer> OrderFarmer { get; set; }
-
         public virtual DbSet<Credential> Credential { get; set; }
-
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
         }
