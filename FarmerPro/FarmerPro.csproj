@@ -333,6 +333,7 @@
     <Compile Include="chathub.cs" />
     <Compile Include="Controllers\CartController.cs" />
     <Compile Include="Controllers\ChatController.cs" />
+    <Compile Include="Controllers\DefaultController.cs" />
     <Compile Include="Controllers\FarmerController.cs" />
     <Compile Include="Controllers\FarmerInforController.cs" />
     <Compile Include="Controllers\FarmerOrderController.cs" />
