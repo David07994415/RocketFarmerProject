@@ -15,10 +15,10 @@ namespace FarmerPro.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        [Display(Name = "產品Id")]   // 先不要設定為外鍵
+        [Display(Name = "產品Id")]
         public int ProductId { get; set; }
 
-        [Display(Name = "使用者Id")]   // 先不要設定為外鍵
+        [Display(Name = "使用者Id")] 
         public int UserId { get; set; }
 
         [Display(Name = "建立時間")]

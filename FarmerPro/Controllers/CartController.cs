@@ -2,6 +2,7 @@
 using FarmerPro.Models.ViewModel;
 using FarmerPro.Securities;
 using Microsoft.Ajax.Utilities;
+using NSwag.Annotations;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -14,14 +15,19 @@ using System.Web.Http;
 
 namespace FarmerPro.Controllers
 {
+    [OpenApiTag("Cart", Description = "購物車")]
     public class CartController : ApiController
     {
         private FarmerProDB db = new FarmerProDB();
 
-        #region FGC-2 取得購物車清單
+        #region FGC-02 取得購物車清單
 
+        /// <summary>
+        /// FGC-02 取得購物車清單
+        /// </summary>
+        /// <param></param>
+        /// <returns>返回購物車清單的 JSON 物件</returns>
         [HttpGet]
-        //自定義路由
         [Route("api/cart")]
         [JwtAuthFilter]
         public IHttpActionResult GetCartItem()
@@ -30,9 +36,7 @@ namespace FarmerPro.Controllers
             {
                 int CustomerId = Convert.ToInt16(JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter)["Id"]);
 
-                //var cartIdInfo = db.Carts.Where(c => c.UserId == CustomerId && c.IsPay == false).FirstOrDefault().Id;
-
-                var Getcart = db.Carts.FirstOrDefault(c => c.UserId == CustomerId && c.IsPay == false);
+                var Getcart = db.Carts.Where(c => c.UserId == CustomerId && c.IsPay == false);
 
                 if (Getcart == null)
                 {
@@ -46,8 +50,8 @@ namespace FarmerPro.Controllers
                     return Content(HttpStatusCode.OK, result);
                 }
 
-                var cartIdInfo = Getcart.Id;
-                var cartItemProductIds = db.Carts.Where(c => c.UserId == CustomerId && c.IsPay == false).SelectMany(c => c.CartItem).Select(ci => ci.Spec.ProductId);
+                var cartIdInfo = Getcart.FirstOrDefault().Id;
+                var cartItemProductIds = Getcart.SelectMany(c => c.CartItem).Select(ci => ci.Spec.ProductId);
 
                 var detailProduct = from p in db.Products
                                     join user in db.Users on p.UserId equals user.Id
@@ -138,7 +142,6 @@ namespace FarmerPro.Controllers
 
                 if (!cartItemInfo.Any())
                 {
-                    //result訊息
                     var result = new
                     {
                         statusCode = 200,
@@ -150,7 +153,6 @@ namespace FarmerPro.Controllers
                 }
                 else
                 {
-                    // result 訊息
                     var result = new
                     {
                         statusCode = 200,
@@ -169,7 +171,6 @@ namespace FarmerPro.Controllers
             }
             catch
             {
-                //result訊息
                 var result = new
                 {
                     statusCode = 500,
@@ -180,12 +181,17 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion FGC-2 取得購物車清單
+        #endregion FGC-02 取得購物車清單
 
-        #region FGC-1 加入購物車(要補上購物車數量欄位)
+        #region FGC-01 加入購物車(要補上購物車數量欄位)
 
+        /// <summary>
+        /// FGC-01 加入購物車
+        /// </summary>
+        /// <remarks>要補上購物車數量欄位</remarks>
+        /// <param name="input">提供購物車清單的 JSON 物件</param>
+        /// <returns>返回購物車清單的 JSON 物件</returns>
         [HttpPost]
-        //自定義路由
         [Route("api/cart")]
         [JwtAuthFilter]
         public IHttpActionResult AddCartItem([FromBody] GetCartItemClass input)
@@ -193,9 +199,8 @@ namespace FarmerPro.Controllers
             try
             {
                 int CustomerId = Convert.ToInt16(JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter)["Id"]);
+                var cart = db.Carts.FirstOrDefault(c => c.UserId == CustomerId && c.IsPay == false); //如果沒有就創建
 
-                //如果沒有就創建
-                var cart = db.Carts.FirstOrDefault(c => c.UserId == CustomerId && c.IsPay == false);
                 if (cart == null)
                 {
                     cart = new Cart { UserId = CustomerId, IsPay = false };
@@ -211,7 +216,6 @@ namespace FarmerPro.Controllers
 
                 if (SpecInfo == null)
                 {
-                    //result訊息
                     var result = new
                     {
                         statusCode = 401,
@@ -222,7 +226,6 @@ namespace FarmerPro.Controllers
                 }
                 else if (Qty <= 0)
                 {
-                    //result訊息
                     var result = new
                     {
                         statusCode = 402,
@@ -232,19 +235,16 @@ namespace FarmerPro.Controllers
                     return Content(HttpStatusCode.OK, result);
                 }
                 else
-                {
-                    //判斷是否有直播
-                    bool Islive = input.liveId == null ? false : true;
+                { 
+                    bool Islive = input.liveId == null ? false : true; //判斷是否有直播
+ 
+                    var productPrice = Islive ? SpecInfo.LivePrice : SpecInfo.PromotePrice; //判斷目前商品價格
 
-                    //判斷目前商品價格
-                    var productPrice = Islive ? SpecInfo.LivePrice : SpecInfo.PromotePrice;
-
-                    //加入商品
                     var addcartitem = new CartItem
                     {
                         CartId = cart.Id,
-                        SpecId = input.productSpecId, //沒有此商品，請重新輸入
-                        Qty = input.cartItemQty,  //數量不可為0
+                        SpecId = input.productSpecId,
+                        Qty = input.cartItemQty,
                         SubTotal = (int)productPrice * input.cartItemQty,
                         IsLivePrice = Islive
                     };
@@ -252,33 +252,50 @@ namespace FarmerPro.Controllers
                     db.SaveChanges();
 
                     var cartIdInfo = db.Carts.Where(c => c.UserId == CustomerId && c.IsPay == false).FirstOrDefault().Id;
-                    var cartItemInfo = db.CartItems.Where(c => c.CartId == cartIdInfo).GroupBy(gruop => gruop.SpecId)
-                                        .Select(cartItemGruop => new
-                                        {
-                                            productId = cartItemGruop.FirstOrDefault().Spec.ProductId,
-                                            productTitle = cartItemGruop.FirstOrDefault().Spec.Product.ProductTitle, // Spec--Product--Title
-                                            productSpecId = cartItemGruop.Key,
-                                            productSpecSize = cartItemGruop.FirstOrDefault().Spec.Size,
-                                            productSpecWeight = (int)cartItemGruop.FirstOrDefault().Spec.Weight,
-                                            cartItemOriginalPrice = cartItemGruop.FirstOrDefault().Spec.Price,
-                                            cartItemPromotionPrice = cartItemGruop.FirstOrDefault().Spec.PromotePrice,
-                                            cartItemLivePrice = cartItemGruop.FirstOrDefault().IsLivePrice == true ? cartItemGruop.FirstOrDefault().Spec.LivePrice : (decimal?)null,
-                                            cartItemQty = cartItemGruop.Sum(item => item.Qty),
-                                            subtotal = cartItemGruop.Sum(item => item.IsLivePrice == true ? item.Qty * item.Spec.LivePrice : item.Qty * item.Spec.PromotePrice),
-                                            productImg = new
-                                            {
-                                                src = db.Albums.Where(a => a.ProductId == cartItemGruop.FirstOrDefault().Spec.ProductId).FirstOrDefault().Photo.FirstOrDefault().URL ?? null,
-                                                alt = cartItemGruop.FirstOrDefault().Spec.Product.ProductTitle,
-                                            },
-                                        }).ToList();
 
-                    //var cartItemQtySum = cartItemInfo.Sum(ci => ci.cartItemQty);商品全部數量
-                    //修改成產品種類的數量(用specID groupby)
+                    var cartItemInfo = db.CartItems.Where(c => c.CartId == cartIdInfo).GroupBy(group => group.SpecId)
+                        .Select(cartItemGroup => new
+                        {
+                            productId = cartItemGroup.FirstOrDefault().Spec.ProductId,
+                            productTitle = cartItemGroup.FirstOrDefault().Spec.Product.ProductTitle,
+                            productSpecId = cartItemGroup.Key,
+                            productSpecSize = cartItemGroup.FirstOrDefault().Spec.Size,
+                            productSpecWeight = (int)cartItemGroup.FirstOrDefault().Spec.Weight,
+                            cartItemOriginalPrice = cartItemGroup.FirstOrDefault().Spec.Price,
+                            cartItemPromotionPrice = cartItemGroup.FirstOrDefault().Spec.PromotePrice,
+                            cartItemLivePrice = cartItemGroup.FirstOrDefault().IsLivePrice == true ? cartItemGroup.FirstOrDefault().Spec.LivePrice : (decimal?)null,
+                            cartItemQty = cartItemGroup.Sum(item => item.Qty),
+                            subtotal = cartItemGroup.Sum(item => item.IsLivePrice == true ? item.Qty * item.Spec.LivePrice : item.Qty * item.Spec.PromotePrice),
+                            productImg = new
+                            {
+                                src = db.Albums.Where(a => a.ProductId == cartItemGroup.FirstOrDefault().Spec.ProductId).FirstOrDefault().Photo.FirstOrDefault().URL ?? null,
+                                alt = cartItemGroup.FirstOrDefault().Spec.Product.ProductTitle,
+                            },
+                        }).ToList();
+
+                    var distinctProducts = cartItemInfo.GroupBy(item => item.productId)
+                        .Select(group => new
+                        {
+                            productId = group.Key,
+                            productTitle = group.First().productTitle,
+                            productSpecId = group.First().productSpecId,
+                            productSpecSize = group.First().productSpecSize,
+                            productSpecWeight = group.First().productSpecWeight,
+                            cartItemOriginalPrice = group.First().cartItemOriginalPrice,
+                            cartItemPromotionPrice = group.First().cartItemPromotionPrice,
+                            cartItemLivePrice = group.First().cartItemLivePrice,
+                            cartItemQty = group.Sum(item => item.cartItemQty),
+                            subtotal = group.Sum(item => item.subtotal),
+                            productImg = group.First().productImg
+                        }).ToList();
+
+                    cartItemInfo.Clear();
+                    cartItemInfo.AddRange(distinctProducts);
+
                     var cartItemLength = db.CartItems.Where(c => c.CartId == cartIdInfo).Select(c => c.SpecId).Distinct().Count();
 
                     if (!cartItemInfo.Any())
                     {
-                        //result訊息
                         var result = new
                         {
                             statusCode = 200,
@@ -290,7 +307,6 @@ namespace FarmerPro.Controllers
                     }
                     else
                     {
-                        // result 訊息
                         var result = new
                         {
                             statusCode = 200,
@@ -309,7 +325,6 @@ namespace FarmerPro.Controllers
             }
             catch
             {
-                //result訊息
                 var result = new
                 {
                     statusCode = 500,
@@ -320,12 +335,16 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion FGC-1 加入購物車(要補上購物車數量欄位)
+        #endregion FGC-01 加入購物車(要補上購物車數量欄位)
 
-        #region FGC-3 修改商品數量
+        #region FGC-03 修改商品數量
 
+        /// <summary>
+        /// FGC-03 修改商品數量
+        /// </summary>
+        /// <param name="input">提供購物車清單的 JSON 物件</param>
+        /// <returns>返回購物車清單的 JSON 物件</returns>
         [HttpPut]
-        //自定義路由
         [Route("api/cart")]
         [JwtAuthFilter]
         public IHttpActionResult UpdateCartItem([FromBody] GetCartItemClass input)
@@ -334,11 +353,9 @@ namespace FarmerPro.Controllers
             {
                 int CustomerId = Convert.ToInt16(JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter)["Id"]);
 
-                //如果沒有就創建
-                var cart = db.Carts.FirstOrDefault(c => c.UserId == CustomerId && c.IsPay == false);
+                var cart = db.Carts.FirstOrDefault(c => c.UserId == CustomerId && c.IsPay == false); //如果沒有就創建
                 if (cart == null)
                 {
-                    //result訊息
                     var result = new
                     {
                         statusCode = 403,
@@ -357,7 +374,6 @@ namespace FarmerPro.Controllers
                 var cartItemSpecId = db.CartItems.FirstOrDefault(ci => ci.CartId == CartId && ci.SpecId == SpecId);
                 if (cartItemSpecId == null)
                 {
-                    //result訊息
                     var result = new
                     {
                         statusCode = 404,
@@ -369,7 +385,6 @@ namespace FarmerPro.Controllers
 
                 if (SpecInfo == null)
                 {
-                    //result訊息
                     var result = new
                     {
                         statusCode = 401,
@@ -380,7 +395,6 @@ namespace FarmerPro.Controllers
                 }
                 else if (Qty <= 0)
                 {
-                    //result訊息
                     var result = new
                     {
                         statusCode = 402,
@@ -391,8 +405,7 @@ namespace FarmerPro.Controllers
                 }
                 else
                 {
-                    //修改商品
-                    var updatecartitem = new CartItem
+                    var updatecartitem = new CartItem //修改商品
                     {
                         CartId = cart.Id,
                         SpecId = input.productSpecId,
@@ -493,7 +506,6 @@ namespace FarmerPro.Controllers
 
                     if (!cartItemInfo.Any())
                     {
-                        //result訊息
                         var result = new
                         {
                             statusCode = 200,
@@ -505,7 +517,6 @@ namespace FarmerPro.Controllers
                     }
                     else
                     {
-                        // result 訊息
                         var result = new
                         {
                             statusCode = 200,
@@ -524,7 +535,6 @@ namespace FarmerPro.Controllers
             }
             catch
             {
-                //result訊息
                 var result = new
                 {
                     statusCode = 500,
@@ -535,12 +545,16 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion FGC-3 修改商品數量
+        #endregion FGC-03 修改商品數量
 
-        #region FGC-4 修改商品規格
+        #region FGC-04 修改商品規格
 
+        /// <summary>
+        /// FGC-04 修改商品規格
+        /// </summary>
+        /// <param name="input">提供購物車清單的 JSON 物件</param>
+        /// <returns>返回購物車清單的 JSON 物件</returns>
         [HttpPut]
-        //自定義路由
         [Route("api/cart/specId")]
         [JwtAuthFilter]
         public IHttpActionResult UpdateCartItemspecId([FromBody] GetCartItemClass input)
@@ -549,11 +563,9 @@ namespace FarmerPro.Controllers
             {
                 int CustomerId = Convert.ToInt16(JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter)["Id"]);
 
-                //如果沒有就創建
-                var cart = db.Carts.FirstOrDefault(c => c.UserId == CustomerId && c.IsPay == false);
+                var cart = db.Carts.FirstOrDefault(c => c.UserId == CustomerId && c.IsPay == false); //如果沒有就創建
                 if (cart == null)
                 {
-                    //result訊息
                     var result = new
                     {
                         statusCode = 403,
@@ -568,7 +580,6 @@ namespace FarmerPro.Controllers
 
                 var SpecInfo = db.Specs.FirstOrDefault(s => s.Id == SpecId);
 
-                //var cartItemUpdate = db.CartItems.FirstOrDefault(ci => ci.CartId == CartId && ci.Spec.ProductId == input.productId);
                 var cartItemUpdate = db.CartItems.Where(ci => ci.CartId == CartId && ci.Spec.ProductId == input.productId).ToList();
                 if (cartItemUpdate == null)
                 {
@@ -583,7 +594,6 @@ namespace FarmerPro.Controllers
 
                 if (SpecInfo == null)
                 {
-                    //result訊息
                     var result = new
                     {
                         statusCode = 401,
@@ -594,15 +604,7 @@ namespace FarmerPro.Controllers
                 }
                 else
                 {
-                    ////修改商品
-                    //var updatecartitem = new CartItem
-                    //{
-                    //    CartId = cart.Id,
-                    //    SpecId = input.productSpecId,
-                    //};
-
-                    //cartItemUpdate.SpecId = SpecId;
-                    foreach (var item in cartItemUpdate)
+                    foreach (var item in cartItemUpdate) //修改商品
                     {
                         item.SpecId = SpecId;
                     }
@@ -697,7 +699,6 @@ namespace FarmerPro.Controllers
 
                     if (!cartItemInfo.Any())
                     {
-                        //result訊息
                         var result = new
                         {
                             statusCode = 200,
@@ -709,7 +710,6 @@ namespace FarmerPro.Controllers
                     }
                     else
                     {
-                        // result 訊息
                         var result = new
                         {
                             statusCode = 200,
@@ -728,7 +728,6 @@ namespace FarmerPro.Controllers
             }
             catch
             {
-                //result訊息
                 var result = new
                 {
                     statusCode = 500,
@@ -739,12 +738,16 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion FGC-4 修改商品規格
+        #endregion FGC-04 修改商品規格
 
-        #region FGC-5 刪除特定商品
+        #region FGC-05 刪除特定商品
 
+        /// <summary>
+        /// FGC-05 刪除特定商品
+        /// </summary>
+        /// <param name="input">提供購物車清單的 JSON 物件</param>
+        /// <returns>返回購物車清單的 JSON 物件</returns>
         [HttpDelete]
-        //自定義路由
         [Route("api/cart")]
         [JwtAuthFilter]
         public IHttpActionResult DeleteCartItem([FromBody] GetCartItemClass input)
@@ -797,8 +800,7 @@ namespace FarmerPro.Controllers
                     return Content(HttpStatusCode.OK, result);
                 }
 
-                //刪除商品
-                db.CartItems.RemoveRange(cartItems);
+                db.CartItems.RemoveRange(cartItems); //刪除商品
                 db.SaveChanges();
 
                 if (db.CartItems.Any(ci => ci.CartId == cartIdInfo))
@@ -835,10 +837,8 @@ namespace FarmerPro.Controllers
                                                 },
                                             }).ToList();
 
-                    //var cartItemQtySum = cartItemInfo.Sum(ci => ci.cartItemQty);
                     var cartItemLength = cartItemInfo.Select(item => item.productSpecId).Distinct().Count();
 
-                    // result 訊息
                     var result = new
                     {
                         statusCode = 200,
@@ -867,7 +867,6 @@ namespace FarmerPro.Controllers
             }
             catch
             {
-                //result訊息
                 var result = new
                 {
                     statusCode = 500,
@@ -878,8 +877,11 @@ namespace FarmerPro.Controllers
             }
         }
 
-        #endregion FGC-5 刪除特定商品
+        #endregion FGC-05 刪除特定商品
 
+        /// <summary>
+        /// 取得購物車產品資訊
+        /// </summary>
         public class GetCartItemClass
         {
             [Display(Name = "產品編號")]

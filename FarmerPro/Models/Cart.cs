@@ -15,7 +15,7 @@ namespace FarmerPro.Models
         [Display(Name = "編號")]
         public int Id { get; set; }
 
-        [Display(Name = "使用者Id")]   // 先不要設定為外鍵
+        [Display(Name = "使用者Id")]  
         public int UserId { get; set; }
 
         [Display(Name = "建立時間")]
@@ -25,7 +25,7 @@ namespace FarmerPro.Models
         public bool IsPay { get; set; } = false;
 
 
-        [Display(Name = "購物車商品列表")]//其他表-外鍵
+        [Display(Name = "購物車商品列表")]
         public virtual ICollection<CartItem> CartItem { get; set; }
     }
 }

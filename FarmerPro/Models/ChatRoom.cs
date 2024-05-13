@@ -18,19 +18,14 @@ namespace FarmerPro.Models
 
         [Display(Name = "聊天室擁有者ID")]
         public int UserIdOwner { get; set; }
-        //[JsonIgnore]//不會產生無限迴圈
-        //[ForeignKey("UserIdOwner")]
-        //[Display(Name = "使用者表單Owner")]
-        //public virtual User UserOwner { get; set; }//virtual=虛擬資料，會跟資料庫的對應資料相對應
-
 
         [Display(Name = "聊天室對談者ID")]
         public int UserIdTalker { get; set; }
-        [JsonIgnore]//不會產生無限迴圈
+
+        [JsonIgnore]
         [ForeignKey("UserIdTalker")]
         [Display(Name = "使用者表單Talker")]
-        public virtual User UserTalker { get; set; }//virtual=虛擬資料，會跟資料庫的對應資料相對應
-
+        public virtual User UserTalker { get; set; }
 
         [Display(Name = "建立時間")]
         public DateTime CreatTime { get; set; } = DateTime.Now;

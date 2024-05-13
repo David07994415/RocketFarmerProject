@@ -56,15 +56,14 @@ namespace FarmerPro.Models
         [Display(Name = "刪除狀態")]
         public bool IsDelete { get; set; } = false;
 
-        [Display(Name = "使用者")]//其他表-主鍵
+        [Display(Name = "使用者")]
         public int UserId { get; set; }
-        [JsonIgnore]//不會產生無限迴圈
-        [ForeignKey("UserId")]//本表外鍵名
+
+        [JsonIgnore]
+        [ForeignKey("UserId")]
         public virtual User Users { get; set; }
 
-
-        [Display(Name = "種類")]//其他表-外鍵
+        [Display(Name = "種類")]
         public virtual ICollection<Spec> Spec { get; set; }
-
     }
 }

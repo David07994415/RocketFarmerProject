@@ -25,10 +25,10 @@ namespace FarmerPro.Models
         [Display(Name = "訂單標號外鍵")]
         public int OrderId { get; set; }
 
-        [JsonIgnore]//不會產生無限迴圈
+        [JsonIgnore]
         [ForeignKey("OrderId")]
         [Display(Name = "使用者表單")]
-        public virtual Order Order { get; set; }//virtual=虛擬資料，會跟資料庫的對應資料相對應
+        public virtual Order Order { get; set; }
 
         [Display(Name = "小農出貨狀態")]
         public bool ShipmentFarmer { get; set; } = false;

@@ -28,12 +28,10 @@ namespace FarmerPro.Models
         [Display(Name = "GUID驗證碼")]
         public Guid? EmailGUID { get; set; }
 
-        [Required]
         [MaxLength(500)]
         [Display(Name = "密碼")]
         public string Password { get; set; }
 
-        [Required]
         [MaxLength(500)]
         [Display(Name = "加鹽")]
         public string Salt { get; set; }
@@ -68,11 +66,13 @@ namespace FarmerPro.Models
         [Display(Name = "建立時間")]
         public DateTime CreatTime { get; set; } = DateTime.Now;
 
-
-        [Display(Name = "商品")]//其他表-外鍵
+        [Display(Name = "商品")]
         public virtual ICollection<Product> Product { get; set; }
 
-        [Display(Name = "1-1聊天室")]//其他表-外鍵
+        [Display(Name = "1-1聊天室")]
         public virtual ICollection<ChatRoom> ChatRoom { get; set; }
+
+        [Display(Name = "憑證")]
+        public virtual ICollection<Credential> Credential { get; set; }
     }
 }

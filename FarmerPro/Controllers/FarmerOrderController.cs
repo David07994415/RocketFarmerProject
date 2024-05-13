@@ -2,6 +2,7 @@
 using FarmerPro.Securities;
 using MailKit.Search;
 using Microsoft.AspNet.SignalR;
+using NSwag.Annotations;
 using Org.BouncyCastle.Asn1.X509;
 using System;
 using System.Collections.Generic;
@@ -13,12 +14,17 @@ using System.Web.Http;
 
 namespace FarmerPro.Controllers
 {
+    [OpenApiTag("Order", Description = "訂單及金流")]
     public class FarmerOrderController : ApiController
     {
         private FarmerProDB db = new FarmerProDB();
 
-        #region BFO-1 取得小農訂單清單
-
+        #region BFO-01 取得小農訂單清單
+        /// <summary>
+        /// BFO-01 取得小農訂單清單
+        /// </summary>
+        /// <param></param>
+        /// <returns>返回小農訂單清單的 JSON 物件</returns>
         [HttpGet]
         [Route("api/farmer/orderlist")]
         [JwtAuthFilter]
@@ -56,7 +62,6 @@ namespace FarmerPro.Controllers
 
                     if (!orderInfo.Any())
                     {
-                        //result訊息
                         var getOrder = new
                         {
                             statusCode = 200,
@@ -68,9 +73,6 @@ namespace FarmerPro.Controllers
                     }
                     else
                     {
-                        //var userNickName = (from order in db.Orders
-                        //                    join u in db.Users on order.UserId equals user.Id
-                        //                    select user.NickName).FirstOrDefault();
                         var result = new
                         {
                             statusCode = 200,
@@ -93,11 +95,14 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
+        #endregion BFO-01 取得小農訂單清單
 
-        #endregion BFO-1 取得小農訂單清單
-
-        #region BFO-2 修改小農單一訂單狀態
-
+        #region BFO-02 修改小農單一訂單狀態
+        /// <summary>
+        /// BFO-02 修改小農單一訂單狀態
+        /// </summary>
+        /// <param name="orderId">提供訂單Id</param>
+        /// <returns>返回小農單一訂單狀態</returns>
         [HttpPatch]
         [Route("api/farmer/order/{orderId}/toggle")]
         [JwtAuthFilter]
@@ -124,7 +129,6 @@ namespace FarmerPro.Controllers
 
                     if (order == null)
                     {
-                        //result訊息
                         var getOrder = new
                         {
                             statusCode = 402,
@@ -138,7 +142,6 @@ namespace FarmerPro.Controllers
                         order.Shipment = !order.Shipment;
                         db.SaveChanges();
 
-                        //進行WS的message傳送
                         var hubsocket = GlobalHost.ConnectionManager.GetHubContext<chathub>();
                         int id = db.Orders.Where(x => x.Id == orderId).FirstOrDefault().UserId;
                         string connectionId = "";
@@ -152,7 +155,7 @@ namespace FarmerPro.Controllers
                         {
                             statusCode = 200,
                             status = "success",
-                            message = "訂單狀態更新成功",
+                            message = $"訂單狀態更新成功",
                         };
                         return Content(HttpStatusCode.OK, result);
                     }
@@ -169,11 +172,14 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
+        #endregion BFO-02 修改小農單一訂單狀態
 
-        #endregion BFO-2 修改小農單一訂單狀態
-
-        #region BFO-3 搜尋特定訂單(小農自有，搜尋清單內含產品)
-
+        #region BFO-03 搜尋特定訂單(小農自有，搜尋清單內含商品)
+        /// <summary>
+        /// BFO-03 搜尋特定訂單(小農自有，搜尋清單內含商品)
+        /// </summary>
+        /// <param name="input">提供商品名稱</param>
+        /// <returns>返回小農特定訂單的 JSON 物件</returns>
         [HttpPost]
         [Route("api/farmer/order/search")]
         [JwtAuthFilter]
@@ -200,7 +206,6 @@ namespace FarmerPro.Controllers
 
                     if (!orders.Any())
                     {
-                        //result訊息
                         var getOrder = new
                         {
                             statusCode = 200,
@@ -230,7 +235,6 @@ namespace FarmerPro.Controllers
 
                         if (!searchFarmerOrder.Any())
                         {
-                            //result訊息
                             var searchresult = new
                             {
                                 statusCode = 200,
@@ -265,9 +269,11 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
+        #endregion BFO-03 搜尋特定訂單(小農自有，搜尋清單內含商品)
 
-        #endregion BFO-3 搜尋特定訂單(小農自有，搜尋清單內含產品)
-
+        /// <summary>
+        /// 搜尋商品名
+        /// </summary>
         public class SerchFarmerOrder
         {
             [Display(Name = "搜尋")]

@@ -12,8 +12,10 @@ namespace FarmerPro.Models.ViewModel
     {
         [Display(Name = "access token")]
         public string accessToken { get; set; }
+
         [Display(Name = "IssueAt")]
         public string issue { get; set; }
+
         [Display(Name = "IssueAt UTC")]
         public string issueUTC { get; set; }
 
@@ -24,7 +26,6 @@ namespace FarmerPro.Models.ViewModel
         [MaxLength(100)]
         [Display(Name = "直播名稱")]
         public string liveName { get; set; }
-
 
         [Display(Name = "直播日期")]
         [DataType(DataType.Date)]
@@ -42,17 +43,10 @@ namespace FarmerPro.Models.ViewModel
         public string livePic { get; set; }    
 
         [Required]
-        [Display(Name = "YT直播網址")]   //可以加入網址的正規表達式
+        [Display(Name = "YT直播網址")]  
         public string yturl { get; set; }
 
-        //[Display(Name = "產品Id")]                    //直播設定不需要設定置頂產品了
-        //public int topProductId { get; set; }        
-
-        //[Display(Name = "產品尺寸")]                //直播設定不需要設定置頂產品了
-        //public bool topProductSize { get; set; }
-
-
-        [Display(Name = "直播產品")]//其他表-外鍵
+        [Display(Name = "直播產品")]
         public List<CreateNewLiveProudct> liveproduct { get; set; }
     }
 
@@ -66,6 +60,5 @@ namespace FarmerPro.Models.ViewModel
 
         [Display(Name = "直播價格")]
         public int liveprice { get; set; }
-
     }
 }

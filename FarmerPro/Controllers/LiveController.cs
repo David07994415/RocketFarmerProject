@@ -1,5 +1,6 @@
 ﻿using FarmerPro.Models;
 using FarmerPro.Models.ViewModel;
+using NSwag.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -12,11 +13,17 @@ using System.Web.Http;
 
 namespace FarmerPro.Controllers
 {
+    [OpenApiTag("Live", Description = "直播內容及設定")]
     public class LiveController : ApiController
     {
         private FarmerProDB db = new FarmerProDB();
 
-        #region FCL-1 取得目前直播內容(包含取得近期直播內容)
+        #region FCL-01 取得目前直播內容(包含取得近期直播內容)
+        /// <summary>
+        /// FCL-01 取得目前直播內容(包含取得近期直播內容)
+        /// </summary>
+        /// <param></param>
+        /// <returns>返回目前直播內容</returns>
         [HttpGet]
         [Route("api/live/")]
         public IHttpActionResult RenderLiveSession()
@@ -24,7 +31,8 @@ namespace FarmerPro.Controllers
             try
             {
                 var CurrentLiveEvent = db.LiveSettings.AsEnumerable()
-                    .Where(x => x.LiveDate.Date == DateTime.Now.Date && (x.StartTime.Hours <= DateTime.Now.Hour && x.StartTime.Minutes <= DateTime.Now.Minute &&  x.EndTime.Hours > DateTime.Now.Hour && x.EndTime.Minutes <= DateTime.Now.Minute))
+                    .Where(x => x.Id == 47)  // Fix to render the data
+                                             //.Where(x => x.LiveDate.Date == DateTime.Now.Date && (x.StartTime.Hours <= DateTime.Now.Hour && x.StartTime.Minutes <= DateTime.Now.Minute &&  x.EndTime.Hours > DateTime.Now.Hour && x.EndTime.Minutes <= DateTime.Now.Minute))
                     .Select(liveSetting => new
                     {
                         LiveSetting = liveSetting,
@@ -33,21 +41,11 @@ namespace FarmerPro.Controllers
                                            .OrderByDescending(album => album.CreateTime)
                                            .FirstOrDefault()
                     })
-                    //.Join(db.LiveAlbum,
-                    //      liveSetting => liveSetting.Id,
-                    //      liveAlbum => liveAlbum.LiveId,
-                    //      (liveSetting, liveAlbum) => new
-                    //      {
-                    //          LiveSetting = liveSetting,
-                    //          LiveAlbum = liveAlbum
-                    //      })
-                    //.GroupBy(x => x.LiveSetting)  // 依據LiveSetting進行分組
-                    //.Select(g => g.First())  // 每組取1個，確保LiveSettings對上一個
                     .FirstOrDefault();
 
-
                 var UpcomingLiveEvent = db.LiveSettings.AsEnumerable()
-                    .Where(x => (x.LiveDate.Date == DateTime.Now.Date && x.StartTime.Hours > DateTime.Now.Hour) || x.LiveDate.Date > DateTime.Now.Date)
+                    .Where(x => x.LiveDate.Date >= new DateTime(2024, 03, 09))  // Fix to render the data
+                                                                                //.Where(x => (x.LiveDate.Date == DateTime.Now.Date && x.StartTime.Hours > DateTime.Now.Hour) || x.LiveDate.Date > DateTime.Now.Date)
                     .OrderBy(x => x.LiveDate)
                     .Select(liveSetting => new
                     {
@@ -57,19 +55,9 @@ namespace FarmerPro.Controllers
                         .OrderByDescending(album => album.CreateTime)
                         .FirstOrDefault()
                     })
-                    //.Join(db.LiveAlbum,
-                    //      liveSetting => liveSetting.Id,
-                    //      liveAlbum => liveAlbum.LiveId,
-                    //      (liveSetting, liveAlbum) => new
-                    //      {
-                    //          LiveSetting = liveSetting,
-                    //          LiveAlbum = liveAlbum
-                    //      })
-                    //.GroupBy(x => x.LiveSetting)  // 依據LiveSetting進行分組
-                    //.Select(g => g.First())              // 每組取1個，確保LiveSettings對上一個
                     .Take(6);
 
-                if (CurrentLiveEvent == null)  // 沒有現正直播
+                if (CurrentLiveEvent == null)  // 若現正沒有直播場次
                 {
                     var result = new
                     {
@@ -86,7 +74,6 @@ namespace FarmerPro.Controllers
                                 livePrice = eventItem.LiveSetting.LiveProduct.FirstOrDefault()?.Spec.LivePrice,
                                 liveFarmer = eventItem.LiveSetting.LiveProduct.FirstOrDefault()?.Spec.Product.Users.NickName,
                                 liveFarmerPic = eventItem.LiveSetting.LiveProduct.FirstOrDefault()?.Spec.Product.Users.Photo,
-                                //livePic = eventItem.LivePic?.FirstOrDefault(),
                                 livePic = eventItem.LiveAlbum?.Photo,
                                 liveTime = eventItem.LiveSetting.LiveDate.Date.ToString("yyyy.MM.dd") + " " + SwitchDayofWeek(eventItem.LiveSetting.LiveDate.DayOfWeek) + " " + eventItem.LiveSetting.StartTime.ToString().Substring(0, 5),
                             }).ToList()
@@ -94,7 +81,7 @@ namespace FarmerPro.Controllers
                     };
                     return Content(HttpStatusCode.OK, result);
                 }
-                else                                        // 有現正直播
+                else  // 若現正有直播
                 {
                     var result = new
                     {
@@ -117,7 +104,6 @@ namespace FarmerPro.Controllers
                                 livePrice = eventItem.LiveSetting.LiveProduct.FirstOrDefault()?.Spec.LivePrice,
                                 liveFarmer = eventItem.LiveSetting.LiveProduct.FirstOrDefault()?.Spec.Product.Users.NickName,
                                 liveFarmerPic = eventItem.LiveSetting.LiveProduct.FirstOrDefault()?.Spec.Product.Users.Photo,
-                                //livePic = eventItem.LivePic?.FirstOrDefault(),
                                 livePic = eventItem.LiveAlbum?.Photo,
                                 liveTime = eventItem.LiveSetting.LiveDate.Date.ToString("yyyy.MM.dd") + " " + SwitchDayofWeek(eventItem.LiveSetting.LiveDate.DayOfWeek) + " " + eventItem.LiveSetting.StartTime.ToString().Substring(0, 5),
                             }).ToList()
@@ -137,15 +123,21 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-        #endregion FCL-1 取得目前直播內容(包含取得近期直播內容)
 
-        #region FCL-2 取得特定直播場次內容(包含庫存資料)
+        #endregion FCL-01 取得目前直播內容(包含取得近期直播內容)
+
+        #region FCL-02 取得特定直播場次內容(包含庫存資料)
+        /// <summary>
+        /// FCL-02 取得特定直播場次內容(包含庫存資料)
+        /// </summary>
+        /// <param name="liveId">提供直播Id</param>
+        /// <returns>返回特定直播的 JSON 物件</returns>
         [HttpGet]
         [Route("api/live/{liveId}")]
         public IHttpActionResult RenderLiveEvent(int liveId)
         {
-            //try
-            //{
+            try
+            {
                 var LiveEvent = db.LiveSettings.Where(x => x.Id == liveId)?.AsEnumerable().FirstOrDefault();
                 if (LiveEvent == null)
                 {
@@ -157,11 +149,11 @@ namespace FarmerPro.Controllers
                     };
                     return Content(HttpStatusCode.OK, result);
                 }
-                else 
+                else
                 {
-                    if (LiveEvent.LiveDate.Date == DateTime.Now.Date && (LiveEvent.StartTime.Hours <= DateTime.Now.Hour && LiveEvent.StartTime.Minutes <= DateTime.Now.Minute && LiveEvent.EndTime.Hours > DateTime.Now.Hour && LiveEvent.EndTime.Minutes <= DateTime.Now.Minute))
+                    if (LiveEvent.Id == 47) // Fix for rendering data
+                    //if (LiveEvent.LiveDate.Date == DateTime.Now.Date && (LiveEvent.StartTime.Hours <= DateTime.Now.Hour && LiveEvent.StartTime.Minutes <= DateTime.Now.Minute && LiveEvent.EndTime.Hours > DateTime.Now.Hour && LiveEvent.EndTime.Minutes <= DateTime.Now.Minute))
                     {
-
                         var topproduct = db.LiveProducts.Where(x => x.LiveSettingId == liveId && x.IsTop == true)?.FirstOrDefault();
                         int topproductspecId = 0;
                         if (topproduct != null) { topproductspecId = topproduct.Spec.ProductId; };
@@ -175,12 +167,13 @@ namespace FarmerPro.Controllers
                                 liveId = LiveEvent.Id,
                                 yturl = LiveEvent.ShareURL,
                                 liveName = LiveEvent.LiveName,
-                                liveFarmerId=db.Users.Where(x => x.Id == LiveEvent.UserId)?.FirstOrDefault()?.Id,
+                                liveFarmerId = db.Users.Where(x => x.Id == LiveEvent.UserId)?.FirstOrDefault()?.Id,
                                 liveFarmer = db.Users.Where(x => x.Id == LiveEvent.UserId)?.FirstOrDefault()?.NickName == null ?
                                                        db.Users.Where(x => x.Id == LiveEvent.UserId)?.FirstOrDefault()?.Account.ToString().Substring(0, 2) + "小農"
                                                        : db.Users.Where(x => x.Id == LiveEvent.UserId)?.FirstOrDefault()?.NickName,
                                 liveFarmerPic = db.Users.Where(x => x.Id == LiveEvent.UserId)?.FirstOrDefault()?.Photo,
-                                liveDate = LiveEvent.LiveDate.Date.ToString("yyyy.MM.dd") + " " + SwitchDayofWeek(LiveEvent.LiveDate.DayOfWeek)+ " " + LiveEvent.StartTime.ToString().Substring(0, 5),
+                                liveDate = LiveEvent.LiveDate.Date.ToString("yyyy.MM.dd") + " " + SwitchDayofWeek(LiveEvent.LiveDate.DayOfWeek) + " " + LiveEvent.StartTime.ToString().Substring(0, 5),
+                                endTime = LiveEvent.EndTime.ToString().Substring(0, 5),
                                 liveDescription = db.Users.Where(x => x.Id == LiveEvent.UserId)?.FirstOrDefault()?.Description,
                                 topProductId = LiveEvent.LiveProduct.Where(x => x.IsTop == true)?.FirstOrDefault()?.Spec.ProductId,
                                 topProductName = db.Products.Where(x => x.Id == topproductspecId)?.FirstOrDefault()?.ProductTitle,
@@ -191,7 +184,7 @@ namespace FarmerPro.Controllers
                                 liveProductList = LiveEvent.LiveProduct.Select(y => new
                                 {
                                     productId = y.Spec?.ProductId,
-                                    productName= db.Products.Where(k => k.Id == y.Spec.ProductId)?.FirstOrDefault().ProductTitle,
+                                    productName = db.Products.Where(k => k.Id == y.Spec.ProductId)?.FirstOrDefault().ProductTitle,
                                     specId = y.SpecId,
                                     productStock = y.Spec?.Stock,
                                     productLivePrice = y.Spec?.LivePrice,
@@ -202,7 +195,7 @@ namespace FarmerPro.Controllers
                         };
                         return Content(HttpStatusCode.OK, result);
                     }
-                    else 
+                    else
                     {
                         var result = new
                         {
@@ -213,19 +206,19 @@ namespace FarmerPro.Controllers
                         return Content(HttpStatusCode.OK, result);
                     }
                 }
-            //}
-            //catch
-            //{
-            //    var result = new
-            //    {
-            //        statusCode = 500,
-            //        status = "error",
-            //        message = "其他錯誤",
-            //    };
-            //    return Content(HttpStatusCode.OK, result);
-            //}
+            }
+            catch
+            {
+                var result = new
+                {
+                    statusCode = 500,
+                    status = "error",
+                    message = "其他錯誤",
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
         }
-        #endregion
+        #endregion FCL-02 取得特定直播場次內容(包含庫存資料)
 
         public string SwitchDayofWeek(DayOfWeek input)
         {
@@ -261,16 +254,6 @@ namespace FarmerPro.Controllers
                     break;
             }
             return chineseDayOfWeek.ToString();
-        }//星期的中文轉換方法
-
-        //測試用途api
-        [HttpGet]
-        [Route("api/liveAlbum/")]
-        public IHttpActionResult RenderLiveSession1()
-        {
-            var CurrentLiveEvent = db.LiveAlbum.ToList();
-
-            return Content(HttpStatusCode.OK, CurrentLiveEvent);
         }
     }
 }

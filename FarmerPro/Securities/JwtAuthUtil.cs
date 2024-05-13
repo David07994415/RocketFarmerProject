@@ -14,8 +14,6 @@ namespace FarmerPro.Securities
     /// </summary>
     public class JwtAuthUtil
     {
-        //private readonly FarmerProDB db = new FarmerProDB(); // DB 連線
-
         /// <summary>
         /// 生成 JwtToken
         /// </summary>
@@ -23,11 +21,7 @@ namespace FarmerPro.Securities
         /// <returns>JwtToken</returns>
         public string GenerateToken(int id, int userCategory)
         {
-            // 自訂字串，驗證用，用來加密送出的 key (放在 Web.config 的 appSettings)
             string secretKey = WebConfigurationManager.AppSettings["TokenKey"]; // 從 appSettings 取出
-            //var user = db.Users.Find(id); // 進 DB 取出想要夾帶的基本資料
-
-            // payload 需透過 token 傳遞的資料 (可夾帶常用且不重要的資料)
             var payload = new Dictionary<string, object>
             {
                 { "Id", id},
@@ -35,8 +29,6 @@ namespace FarmerPro.Securities
                 { "Iat", DateTime.Now },
                 { "Exp", DateTime.Now.AddMinutes(1440).ToString() } // JwtToken 時效設定 1440 分 (一天)
             };
-
-            // 產生 JwtToken
             var token = JWT.Encode(payload, Encoding.UTF8.GetBytes(secretKey), JwsAlgorithm.HS512);
             return token;
         }
@@ -57,7 +49,6 @@ namespace FarmerPro.Securities
                 { "Image", tokenData["Image"].ToString() },
                 { "Exp", DateTime.Now.AddMinutes(30).ToString() } // JwtToken 時效刷新設定 30 分
             };
-
             //產生刷新時效的 JwtToken
             var token = JWT.Encode(payload, Encoding.UTF8.GetBytes(secretKey), JwsAlgorithm.HS512);
             return token;
@@ -78,10 +69,8 @@ namespace FarmerPro.Securities
                 { "Image", "None" },
                 { "Exp", DateTime.Now.AddDays(-15).ToString() } // 使 JwtToken 過期 失效
             };
-
             // 產生失效的 JwtToken
             var token = JWT.Encode(payload, Encoding.UTF8.GetBytes(secretKey), JwsAlgorithm.HS512);
-            //return token;
             return "";
         }
     }
