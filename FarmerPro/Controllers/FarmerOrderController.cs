@@ -20,7 +20,6 @@ namespace FarmerPro.Controllers
         private FarmerProDB db = new FarmerProDB();
 
         #region BFO-01 取得小農訂單清單
-
         /// <summary>
         /// BFO-01 取得小農訂單清單
         /// </summary>
@@ -96,11 +95,9 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-
         #endregion BFO-01 取得小農訂單清單
 
         #region BFO-02 修改小農單一訂單狀態
-
         /// <summary>
         /// BFO-02 修改小農單一訂單狀態
         /// </summary>
@@ -175,11 +172,9 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-
         #endregion BFO-02 修改小農單一訂單狀態
 
         #region BFO-03 搜尋特定訂單(小農自有，搜尋清單內含商品)
-
         /// <summary>
         /// BFO-03 搜尋特定訂單(小農自有，搜尋清單內含商品)
         /// </summary>
@@ -211,7 +206,6 @@ namespace FarmerPro.Controllers
 
                     if (!orders.Any())
                     {
-                        //result訊息
                         var getOrder = new
                         {
                             statusCode = 200,
@@ -241,7 +235,6 @@ namespace FarmerPro.Controllers
 
                         if (!searchFarmerOrder.Any())
                         {
-                            //result訊息
                             var searchresult = new
                             {
                                 statusCode = 200,
@@ -276,7 +269,6 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-
         #endregion BFO-03 搜尋特定訂單(小農自有，搜尋清單內含商品)
 
         /// <summary>
