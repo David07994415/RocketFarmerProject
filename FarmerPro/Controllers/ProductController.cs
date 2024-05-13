@@ -30,36 +30,33 @@ namespace FarmerPro.Controllers
         /// <param></param>
         /// <returns>返回所有商品的 JSON 物件</returns>
         [HttpGet]
-        //自定義路由
         [Route("api/product/all")]
         public IHttpActionResult productall()
         {
-            //try
-            //{
-            //取得Product、Spec、Album、Photo的聯合資料
-            var productInfo = from p in db.Products
-                              join s in db.Specs on p.Id equals s.ProductId
-                              from album in db.Albums.Where(a => p.Id == a.ProductId).DefaultIfEmpty()
-                              let photo = db.Photos.FirstOrDefault(ph => album != null && album.Id == ph.AlbumId)
-                              where p.ProductState && !s.Size // 確認p.ProductState = true && s.Size = false
-                              orderby p.CreatTime descending
-                              select new
-                              {
-                                  productId = p.Id,
-                                  productSpecId = s.Id,
-                                  productTitle = p.ProductTitle,
-                                  smallOriginalPrice = s.Price,
-                                  smallPromotionPrice = s.PromotePrice,
-                                  productImg = new
-                                  {
-                                      src = photo != null ? photo.URL : null,
-                                      alt = p.ProductTitle
-                                  }
-                              };
+            try
+            {
+                var productInfo = from p in db.Products
+                            join s in db.Specs on p.Id equals s.ProductId
+                            from album in db.Albums.Where(a => p.Id == a.ProductId).DefaultIfEmpty()
+                            let photo = db.Photos.FirstOrDefault(ph => album != null && album.Id == ph.AlbumId)
+                            where p.ProductState && !s.Size
+                            orderby p.CreatTime descending
+                            select new
+                            {
+                                productId = p.Id,
+                                productSpecId = s.Id,
+                                productTitle = p.ProductTitle,
+                                smallOriginalPrice = s.Price,
+                                smallPromotionPrice = s.PromotePrice,
+                                productImg = new
+                                {
+                                    src = photo != null ? photo.URL : null,
+                                    alt = p.ProductTitle
+                                }
+                            };
 
             if (!productInfo.Any())
             {
-                //result訊息
                 var result = new
                 {
                     statusCode = 400,
@@ -70,7 +67,6 @@ namespace FarmerPro.Controllers
             }
             else
             {
-                // result 訊息
                 var result = new
                 {
                     statusCode = 200,
@@ -80,18 +76,17 @@ namespace FarmerPro.Controllers
                 };
                 return Content(HttpStatusCode.OK, result);
             }
-            //}
-            //catch
-            //{
-            //    //result訊息
-            //    var result = new
-            //    {
-            //        statusCode = 500,
-            //        status = "error",
-            //        message = "其他錯誤",
-            //    };
-            //    return Content(HttpStatusCode.OK, result);
-            //}
+            }
+            catch
+            {
+                var result = new
+                {
+                    statusCode = 500,
+                    status = "error",
+                    message = "其他錯誤",
+                };
+                return Content(HttpStatusCode.OK, result);
+            }
         }
 
         #endregion FGP-01 取得所有商品
@@ -104,119 +99,115 @@ namespace FarmerPro.Controllers
         /// <param></param>
         /// <returns>返回特定筆數商品的 JSON 物件</returns>
         [HttpGet]
-        //自定義路由
         [Route("api/product")]
         public IHttpActionResult productindex(int topsalesqty = 6, int promoteqty = 4, int fruitqty = 3, int vegatqty = 3)
         {
             try
             {
                 var topSaleProduct = (from p in db.Products
-                                      join s in db.Specs on p.Id equals s.ProductId
-                                      from album in db.Albums.Where(a => p.Id == a.ProductId).DefaultIfEmpty()
-                                      let photo = db.Photos.FirstOrDefault(ph => album != null && album.Id == ph.AlbumId)
-                                      where p.ProductState && !s.Size // 確認p.ProductState = true && s.Size = false
-                                      orderby s.Sales descending, p.CreatTime descending
-                                      select new
-                                      {
-                                          productId = p.Id,
-                                          productSpecId = s.Id,
-                                          productTitle = p.ProductTitle,
-                                          description = p.Description,
-                                          smallOriginalPrice = s.Price,
-                                          smallPromotionPrice = s.PromotePrice,
-                                          productImg = new
-                                          {
-                                              src = photo != null ? photo.URL : null,
-                                              alt = p.ProductTitle
-                                          },
-                                      }).Take(topsalesqty);
+                                    join s in db.Specs on p.Id equals s.ProductId
+                                    from album in db.Albums.Where(a => p.Id == a.ProductId).DefaultIfEmpty()
+                                    let photo = db.Photos.FirstOrDefault(ph => album != null && album.Id == ph.AlbumId)
+                                    where p.ProductState && !s.Size
+                                    orderby s.Sales descending, p.CreatTime descending
+                                    select new
+                                    {
+                                        productId = p.Id,
+                                        productSpecId = s.Id,
+                                        productTitle = p.ProductTitle,
+                                        description = p.Description,
+                                        smallOriginalPrice = s.Price,
+                                        smallPromotionPrice = s.PromotePrice,
+                                        productImg = new
+                                        {
+                                            src = photo != null ? photo.URL : null,
+                                            alt = p.ProductTitle
+                                        },
+                                    }).Take(topsalesqty);
 
                 var promotionProduct = from p in db.Products
-                                       join user in db.Users on p.UserId equals user.Id
-                                       join s in db.Specs on p.Id equals s.ProductId
-                                       from album in db.Albums.Where(a => p.Id == a.ProductId).DefaultIfEmpty()
-                                       let photo = db.Photos.FirstOrDefault(ph => album != null && album.Id == ph.AlbumId)
-                                       where p.ProductState && !s.Size
-                                       orderby p.CreatTime descending
-                                       select new
-                                       {
-                                           productId = p.Id,
-                                           productSpecId = s.Id,
-                                           productTitle = p.ProductTitle,
-                                           description = p.Description,
-                                           farmerName = user.NickName,
-                                           origin = p.Origin.ToString(),
-                                           smallOriginalPrice = s.Price,
-                                           smallPromotionPrice = s.PromotePrice,
-                                           productImg = new
-                                           {
-                                               src = photo != null ? photo.URL : null,
-                                               alt = p.ProductTitle
-                                           },
-                                           farmerImg = new
-                                           {
-                                               src = user.Photo != null ? user.Photo : null,
-                                               alt = user.NickName
-                                           }
-                                       };
+                                    join user in db.Users on p.UserId equals user.Id
+                                    join s in db.Specs on p.Id equals s.ProductId
+                                    from album in db.Albums.Where(a => p.Id == a.ProductId).DefaultIfEmpty()
+                                    let photo = db.Photos.FirstOrDefault(ph => album != null && album.Id == ph.AlbumId)
+                                    where p.ProductState && !s.Size
+                                    orderby p.CreatTime descending
+                                    select new
+                                    {
+                                        productId = p.Id,
+                                        productSpecId = s.Id,
+                                        productTitle = p.ProductTitle,
+                                        description = p.Description,
+                                        farmerName = user.NickName,
+                                        origin = p.Origin.ToString(),
+                                        smallOriginalPrice = s.Price,
+                                        smallPromotionPrice = s.PromotePrice,
+                                        productImg = new
+                                        {
+                                            src = photo != null ? photo.URL : null,
+                                            alt = p.ProductTitle
+                                        },
+                                        farmerImg = new
+                                        {
+                                            src = user.Photo != null ? user.Photo : null,
+                                            alt = user.NickName
+                                        }
+                                    };
 
-                // 轉列表
                 var promotionProducts = promotionProduct.ToList();
 
-                // 隨機
                 var randomPromotionProducts = promotionProducts.OrderBy(x => Guid.NewGuid()).Take(promoteqty).ToList();
 
                 var fruitProduct = from p in db.Products
-                                   join s in db.Specs on p.Id equals s.ProductId
-                                   from album in db.Albums.Where(a => p.Id == a.ProductId).DefaultIfEmpty()
-                                   let photo = db.Photos.FirstOrDefault(ph => album != null && album.Id == ph.AlbumId)
-                                   where ((int)p.Category) == 1 && p.ProductState && !s.Size // 確認p.ProductState = true && s.Size = false
-                                   orderby p.CreatTime descending
-                                   select new
-                                   {
-                                       productId = p.Id,
-                                       productSpecId = s.Id,
-                                       productTitle = p.ProductTitle,
-                                       description = p.Description,
-                                       smallOriginalPrice = s.Price,
-                                       smallPromotionPrice = s.PromotePrice,
-                                       productImg = new
-                                       {
-                                           src = photo != null ? photo.URL : null,
-                                           alt = p.ProductTitle
-                                       }
-                                   };
+                                join s in db.Specs on p.Id equals s.ProductId
+                                from album in db.Albums.Where(a => p.Id == a.ProductId).DefaultIfEmpty()
+                                let photo = db.Photos.FirstOrDefault(ph => album != null && album.Id == ph.AlbumId)
+                                where ((int)p.Category) == 1 && p.ProductState && !s.Size
+                                orderby p.CreatTime descending
+                                select new
+                                {
+                                    productId = p.Id,
+                                    productSpecId = s.Id,
+                                    productTitle = p.ProductTitle,
+                                    description = p.Description,
+                                    smallOriginalPrice = s.Price,
+                                    smallPromotionPrice = s.PromotePrice,
+                                    productImg = new
+                                    {
+                                        src = photo != null ? photo.URL : null,
+                                        alt = p.ProductTitle
+                                    }
+                                };
 
                 var fruitProducts = fruitProduct.ToList();
                 var randomFruitProducts = fruitProducts.OrderBy(x => Guid.NewGuid()).Take(fruitqty).ToList();
 
                 var vegetableProduct = from p in db.Products
-                                       join s in db.Specs on p.Id equals s.ProductId
-                                       from album in db.Albums.Where(a => p.Id == a.ProductId).DefaultIfEmpty()
-                                       let photo = db.Photos.FirstOrDefault(ph => album != null && album.Id == ph.AlbumId)
-                                       where ((int)p.Category) == 0 && p.ProductState && !s.Size // 確認p.ProductState = true && s.Size = false
-                                       orderby p.CreatTime descending
-                                       select new
-                                       {
-                                           productId = p.Id,
-                                           productSpecId = s.Id,
-                                           productTitle = p.ProductTitle,
-                                           description = p.Description,
-                                           smallOriginalPrice = s.Price,
-                                           smallPromotionPrice = s.PromotePrice,
-                                           productImg = new
-                                           {
-                                               src = photo != null ? photo.URL : null,
-                                               alt = p.ProductTitle
-                                           }
-                                       };
+                                    join s in db.Specs on p.Id equals s.ProductId
+                                    from album in db.Albums.Where(a => p.Id == a.ProductId).DefaultIfEmpty()
+                                    let photo = db.Photos.FirstOrDefault(ph => album != null && album.Id == ph.AlbumId)
+                                    where ((int)p.Category) == 0 && p.ProductState && !s.Size
+                                    orderby p.CreatTime descending
+                                    select new
+                                    {
+                                        productId = p.Id,
+                                        productSpecId = s.Id,
+                                        productTitle = p.ProductTitle,
+                                        description = p.Description,
+                                        smallOriginalPrice = s.Price,
+                                        smallPromotionPrice = s.PromotePrice,
+                                        productImg = new
+                                        {
+                                            src = photo != null ? photo.URL : null,
+                                            alt = p.ProductTitle
+                                        }
+                                    };
 
                 var vegetableProducts = vegetableProduct.ToList();
                 var randomVegetableProducts = vegetableProducts.OrderBy(x => Guid.NewGuid()).Take(vegatqty).ToList();
 
                 if (!promotionProduct.Any())
                 {
-                    //result訊息
                     var result = new
                     {
                         statusCode = 400,
@@ -227,7 +218,6 @@ namespace FarmerPro.Controllers
                 }
                 else
                 {
-                    // result 訊息
                     var result = new
                     {
                         statusCode = 200,
@@ -246,7 +236,6 @@ namespace FarmerPro.Controllers
             }
             catch
             {
-                //result訊息
                 var result = new
                 {
                     statusCode = 500,
@@ -267,7 +256,6 @@ namespace FarmerPro.Controllers
         /// <param name="productId">提供商品Id</param>
         /// <returns>返回特定商品的 JSON 物件</returns>
         [HttpGet]
-        //自定義路由
         [Route("api/product/{productId}")]
         public IHttpActionResult productdetail(int productId)
         {
@@ -292,12 +280,12 @@ namespace FarmerPro.Controllers
                                         storage = p.Storage.ToString(),
                                         productDescription = p.Description,
                                         introduction = p.Introduction,
-                                        largeproductSpecId = largeSpec.Id,   //這邊要提供大的SPECID
+                                        largeproductSpecId = largeSpec.Id,
                                         largeOriginalPrice = largeSpec != null ? (int?)largeSpec.Price : null,
                                         largePromotionPrice = largeSpec != null ? (int?)largeSpec.PromotePrice : null,
                                         largeWeight = largeSpec != null ? (int?)largeSpec.Weight : null,
                                         largeStock = largeSpec != null ? (int?)largeSpec.Stock : null,
-                                        smallproductSpecId = smallSpec.Id,  //這邊要提供小的SPECID
+                                        smallproductSpecId = smallSpec.Id,
                                         smallOriginalPrice = smallSpec != null ? (int?)smallSpec.Price : null,
                                         smallPromotionPrice = smallSpec != null ? (int?)smallSpec.PromotePrice : null,
                                         smallWeight = smallSpec != null ? (int?)smallSpec.Weight : null,
@@ -318,20 +306,18 @@ namespace FarmerPro.Controllers
                                         }
                                     };
 
-                //取得productId的UserId
                 var productUserId = db.Products
                                 .Where(p => p.Id == productId && p.ProductState)
                                 .Select(p => new { p.Id, p.UserId })
                                 .FirstOrDefault();
 
-                //取得Product、Spec、Album、Photo的聯合資料
                 var productInfoByUser = from p in db.Products
                                         join s in db.Specs on p.Id equals s.ProductId
                                         from album in db.Albums.Where(a => p.Id == a.ProductId).DefaultIfEmpty()
                                         let photo = db.Photos.FirstOrDefault(ph => album != null && album.Id == ph.AlbumId)
                                         where p.UserId == productUserId.UserId
                                               && p.Id != productId
-                                              && p.ProductState && !s.Size // 確認p.ProductState = true && s.Size = false
+                                              && p.ProductState && !s.Size
                                         orderby p.CreatTime descending
                                         select new
                                         {
@@ -349,7 +335,6 @@ namespace FarmerPro.Controllers
 
                 if (!detailProduct.Any())
                 {
-                    //result訊息
                     var result = new
                     {
                         statusCode = 401,
@@ -360,7 +345,6 @@ namespace FarmerPro.Controllers
                 }
                 else
                 {
-                    // result 訊息
                     var result = new
                     {
                         statusCode = 200,
@@ -377,7 +361,6 @@ namespace FarmerPro.Controllers
             }
             catch
             {
-                //result訊息
                 var result = new
                 {
                     statusCode = 500,
@@ -398,7 +381,6 @@ namespace FarmerPro.Controllers
         /// <param name="input">提供商品名稱</param>
         /// <returns>返回搜尋商品的 JSON 物件</returns>
         [HttpPost]
-        //自定義路由
         [Route("api/product/search")]
         public IHttpActionResult productsearch([FromBody] SerchProduct input)
         {
@@ -410,8 +392,8 @@ namespace FarmerPro.Controllers
                                     join s in db.Specs on p.Id equals s.ProductId
                                     from album in db.Albums.Where(a => p.Id == a.ProductId).DefaultIfEmpty()
                                     let photo = db.Photos.FirstOrDefault(ph => album != null && album.Id == ph.AlbumId)
-                                    where p.ProductState && !s.Size // 確認p.ProductState = true && s.Size = false
-                                       && p.ProductTitle.Contains(searchCheck)
+                                    where p.ProductState && !s.Size
+                                    && p.ProductTitle.Contains(searchCheck)
                                     orderby p.CreatTime descending
                                     select new
                                     {
@@ -430,7 +412,6 @@ namespace FarmerPro.Controllers
 
                 if (!searchProduct.Any())
                 {
-                    //result訊息
                     var result = new
                     {
                         statusCode = 200,
@@ -442,7 +423,6 @@ namespace FarmerPro.Controllers
                 }
                 else
                 {
-                    // result 訊息
                     var result = new
                     {
                         statusCode = 200,
@@ -455,7 +435,6 @@ namespace FarmerPro.Controllers
             }
             catch
             {
-                //result訊息
                 var result = new
                 {
                     statusCode = 500,
