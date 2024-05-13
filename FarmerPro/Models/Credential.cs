@@ -27,13 +27,12 @@ namespace FarmerPro.Models
         [Display(Name = "建立時間")]
         public DateTime CreateTime { get; set; } = DateTime.Now;
 
-
         [Display(Name = "User Id")]
         public int UserId { get; set; }
-        [JsonIgnore]//不會產生無限迴圈
+
+        [JsonIgnore]
         [ForeignKey("UserId")]
         [Display(Name = "User 表單")]
-        public virtual User User { get; set; }//virtual=虛擬資料，會跟資料庫的對應資料相對應
-
+        public virtual User User { get; set; }
     }
 }
