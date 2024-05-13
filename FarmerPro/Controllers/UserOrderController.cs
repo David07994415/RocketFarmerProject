@@ -58,7 +58,6 @@ namespace FarmerPro.Controllers
 
                     if (!orderInfo.Any())
                     {
-                        //result訊息
                         var getOrder = new
                         {
                             statusCode = 200,
