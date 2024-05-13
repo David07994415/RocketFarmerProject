@@ -7,9 +7,8 @@ using System.Web;
 
 namespace FarmerPro.Securities
 {
-    public class CryptoUtil //藍新加密用途
+    public class CryptoUtil //藍新金流加密用途
     {
-
         /// <summary>
         /// 字串加密 AES
         /// </summary>
@@ -133,7 +132,6 @@ namespace FarmerPro.Securities
                 }
 
             }
-
             return result;
         }
 
@@ -157,7 +155,6 @@ namespace FarmerPro.Securities
                 }
                 result = output;
             }
-
             return result;
         }
 
@@ -207,7 +204,5 @@ namespace FarmerPro.Securities
         public string PayTime { get; set; }
         public string PaymentMethod { get; set; }
     }
-
-
 
 }

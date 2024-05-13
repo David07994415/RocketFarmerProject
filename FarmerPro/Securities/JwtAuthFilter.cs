@@ -13,13 +13,11 @@ using System.Web.Http.Filters;
 
 namespace FarmerPro.Securities
 {
-
         /// <summary>
         /// JwtAuthFilter 繼承 ActionFilterAttribute 可生成 [JwtAuthFilter] 使用
         /// </summary>
         public class JwtAuthFilter : ActionFilterAttribute
         {
-            // 加解密的 key，如果不一樣會無法成功解密
             private static readonly string secretKey = WebConfigurationManager.AppSettings["TokenKey"];
 
             /// <summary>
@@ -34,13 +32,9 @@ namespace FarmerPro.Securities
                 // 有取到 JwtToken 後，判斷授權格式不存在且不正確時
                 if (request.Headers.Authorization == null || request.Headers.Authorization.Scheme != "Bearer")
                 {
-
-
-                    // 可考慮配合前端專案開發期限，不修改 StatusCode 預設 200，將請求失敗搭配 Status: false 供前端判斷
                     string messageJson = JsonConvert.SerializeObject(new { statusCode = 409,status="error", message = "驗證失敗，請重新登入" }); // JwtToken 遺失，需導引重新登入
                     var errorMessage = new HttpResponseMessage()
                     {
-                        // StatusCode = System.Net.HttpStatusCode.Unauthorized, // 401
                         ReasonPhrase = "JwtToken Lost",
                         Content = new StringContent(messageJson,
                                     Encoding.UTF8,
@@ -62,7 +56,6 @@ namespace FarmerPro.Securities
                             string messageJson = JsonConvert.SerializeObject(new { statusCode = 409, status = "error", message = "驗證失敗，請重新登入" }); // JwtToken 過期，需導引重新登入
                             var errorMessage = new HttpResponseMessage()
                             {
-                                // StatusCode = System.Net.HttpStatusCode.Unauthorized, // 401
                                 ReasonPhrase = "JwtToken Expired",
                                 Content = new StringContent(messageJson,
                                     Encoding.UTF8,
@@ -77,7 +70,6 @@ namespace FarmerPro.Securities
                         string messageJson = JsonConvert.SerializeObject(new { statusCode = 409, status = "error", message = "驗證失敗，請重新登入" }); // JwtToken 不符，需導引重新登入
                         var errorMessage = new HttpResponseMessage()
                         {
-                            // StatusCode = System.Net.HttpStatusCode.Unauthorized, // 401
                             ReasonPhrase = "JwtToken NotMatch",
                             Content = new StringContent(messageJson,
                                     Encoding.UTF8,
@@ -99,17 +91,6 @@ namespace FarmerPro.Securities
             {
                 return JWT.Decode<Dictionary<string, object>>(token, Encoding.UTF8.GetBytes(secretKey), JwsAlgorithm.HS512);
             }
-
-            /// <summary>
-            /// 有在 Global 設定一律檢查 JwtToken 時才需設定排除，例如 Login 不需要驗證因為還沒有 token
-            /// </summary>
-            /// <param name="requestUri"></param>
-            /// <returns></returns>
-            ////public bool WithoutVerifyToken(string requestUri)
-            ////{
-            ////    //if (requestUri.EndsWith("/login")) return true;
-            ////    return false;
-            ////}
 
             /// <summary>
             /// 驗證 token 時效
