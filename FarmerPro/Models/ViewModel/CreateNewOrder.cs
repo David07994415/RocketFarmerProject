@@ -12,7 +12,6 @@ namespace FarmerPro.Models.ViewModel
 {
     public class CreateNewOrder
     {
-
         [Required]
         [Display(Name = "收貨人")]
         [MaxLength(100)]
@@ -54,17 +53,13 @@ namespace FarmerPro.Models.ViewModel
         [Display(Name = "產品ID")]
         public int productId { get; set; }
 
-
         [Display(Name = "數量")]
         public int qty { get; set; }
 
-        [Display(Name = "規格編號")]      //要傳規格編號比較好找資料
+        [Display(Name = "規格編號")]
         public int specId { get; set; }
 
         [Display(Name = "小計")]
         public double subTotal { get; set; }
     }
-
-
-
 }
