@@ -42,7 +42,6 @@ namespace FarmerPro.Models.ViewModel
         [Display(Name = "上架時間")]
         public DateTime updateStateTime { get; set; }
 
-
         [Display(Name = "大產品原價")]
         public int largeOriginalPrice { get; set; }
 
@@ -54,7 +53,6 @@ namespace FarmerPro.Models.ViewModel
 
         [Display(Name = "大產品規格重量")]
         public double largeWeight { get; set; }
-
 
         [Display(Name = "小產品原價")]
         public int smallOriginalPrice { get; set; }
