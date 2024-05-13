@@ -15,10 +15,10 @@ namespace FarmerPro.Models
         [Display(Name = "編號")]
         public int Id { get; set; }
 
-        [Display(Name = "使用者Id")]   // 先不要設定為外鍵
+        [Display(Name = "使用者Id")]  
         public int UserId { get; set; }
 
-        [Display(Name = "直播Id")]   // 先不要設定為外鍵
+        [Display(Name = "直播Id")]
         public int LiveId { get; set; }
 
         [Required]

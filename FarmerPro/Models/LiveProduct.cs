@@ -22,18 +22,18 @@ namespace FarmerPro.Models
         [Display(Name = "建立時間")]
         public DateTime CreatTime { get; set; } = DateTime.Now;
 
-
-        [Display(Name = "直播設定")]//其他表-主鍵
+        [Display(Name = "直播設定")]
         public int LiveSettingId { get; set; }
-        [JsonIgnore]//不會產生無限迴圈
-        [ForeignKey("LiveSettingId")]//本表外鍵名
+
+        [JsonIgnore]
+        [ForeignKey("LiveSettingId")]
         public virtual LiveSetting LiveSetting { get; set; }
 
-        [Display(Name = "規格")]//其他表-主鍵
+        [Display(Name = "規格")]
         public int SpecId { get; set; }
-        [JsonIgnore]//不會產生無限迴圈
-        [ForeignKey("SpecId")]//本表外鍵名
-        public virtual Spec Spec { get; set; }
 
+        [JsonIgnore]
+        [ForeignKey("SpecId")]
+        public virtual Spec Spec { get; set; }
     }
 }

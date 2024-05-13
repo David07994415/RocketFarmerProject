@@ -25,7 +25,6 @@ namespace FarmerPro.Models
 
         public static YouTubeService GetYouTubeService()
         {
-
             string[] scopes = { "https://www.googleapis.com/auth/youtube" };
             UserCredential credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
                 new ClientSecrets
@@ -34,12 +33,11 @@ namespace FarmerPro.Models
                     ClientSecret = WebConfigurationManager.AppSettings["ytkey"].ToString(),
                 },
                 scopes,
-                //new[] { YouTubeService.Scope.Youtube },
                 "user",
                 System.Threading.CancellationToken.None
                 ).Result;
 
-            // 創建 YouTubeService
+            // 創建 YouTubeService 物件
             var youtubeService = new YouTubeService(new BaseClientService.Initializer()
             {
                 HttpClientInitializer = credential,
@@ -49,30 +47,19 @@ namespace FarmerPro.Models
             return youtubeService;
         }
 
-        public string CreateYouTubeBroadcast(UserCredential credential, string title,string des,DateTime start,DateTime end)
+        public string CreateYouTubeBroadcast(UserCredential credential, string title, string des, DateTime start, DateTime end)
         {
             try
             {
-
-
-                //tokenResponse.Scope= 從這裡開始
-                // 創建 YouTubeService
+                // 創建 YouTubeService 物件
                 var youtubeService = new YouTubeService(new BaseClientService.Initializer()
                 {
                     HttpClientInitializer = credential,
                     ApplicationName = "YourApplicationName_TT"
                 });
 
-
-
-
                 string broadcastTitle = title;
                 string broadcastDescription = des;
-
-               
-                //使用OAuth2
-                //YouTubeService youtubeService = GetYouTubeService();
-
 
                 // 建立廣播物件
                 LiveBroadcast broadcast = new LiveBroadcast();
@@ -83,17 +70,15 @@ namespace FarmerPro.Models
                 broadcast.Status.PrivacyStatus = "unlisted";
 
                 // 設定廣播時間
-                DateTime startTime = start; 
-                string startTimeString = startTime.ToString("o"); // 将 startTime 转换为 ISO 8601 格式的字符串
+                DateTime startTime = start;
+                string startTimeString = startTime.ToString("o");
                 DateTimeOffset startTimeOffset = DateTimeOffset.ParseExact(startTimeString, "o", CultureInfo.InvariantCulture);
                 broadcast.Snippet.ScheduledStartTimeDateTimeOffset = startTimeOffset;
 
                 DateTime endTime = end;
-                string endTimeString = endTime.ToString("o"); // 将 startTime 转换为 ISO 8601 格式的字符串
+                string endTimeString = endTime.ToString("o");
                 DateTimeOffset endTimeOffset = DateTimeOffset.ParseExact(endTimeString, "o", CultureInfo.InvariantCulture);
                 broadcast.Snippet.ScheduledEndTimeDateTimeOffset = endTimeOffset;
-
-
 
                 // 創建直播
                 LiveBroadcast createdBroadcast = youtubeService.LiveBroadcasts.Insert(broadcast, "snippet,status").Execute();
@@ -108,13 +93,13 @@ namespace FarmerPro.Models
             }
             catch (Exception ex)
             {
-                // 異常處理
-                 return ex.Message+ex.StackTrace;
+                return ex.Message + ex.StackTrace;
             }
         }
 
-        public UserCredential CreateToken(string tokeninput) 
+        public UserCredential CreateToken(string tokeninput)
         {
+            // 建立 Token
             TokenResponse token = new TokenResponse();
             token.AccessToken = tokeninput;
             token.Scope = @"https://www.googleapis.com/auth/youtube";
@@ -122,13 +107,11 @@ namespace FarmerPro.Models
             token.Issued = DateTime.Now;
             token.IssuedUtc = DateTime.UtcNow;
 
-
             var clientSecrets = new ClientSecrets
             {
                 ClientId = WebConfigurationManager.AppSettings["ytid"].ToString(),
                 ClientSecret = WebConfigurationManager.AppSettings["ytkey"].ToString()
             };
-
 
             // 建立授權資料流
             var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
@@ -136,72 +119,10 @@ namespace FarmerPro.Models
                 ClientSecrets = clientSecrets
             });
 
-            // 将 TokenResponse 转换为 UserCredential
+            // 取得 credential 資料
             var credential = new UserCredential(flow, "user", token);
 
             return credential;
-
         }
-
-        public string UpdateYouTubeBroadcast(string title, string des, DateTime start, DateTime end,string broadcastIdd)
-        {
-            try
-            {
-                string broadcastTitle = title;
-                string broadcastDescription = des;
-
-                //使用OAuth2
-                YouTubeService youtubeService = GetYouTubeService();
-
-
-
-                // 建立廣播物件
-                LiveBroadcast broadcast = new LiveBroadcast();
-                broadcast.Id = broadcastIdd;
-                broadcast.Snippet = new LiveBroadcastSnippet();
-                broadcast.Snippet.Title = broadcastTitle;
-                broadcast.Snippet.Description = broadcastDescription;
-                broadcast.Status = new LiveBroadcastStatus();
-                broadcast.Status.PrivacyStatus = "unlisted";
-
-                // 設定廣播時間
-                DateTime startTime = start;
-                string startTimeString = startTime.ToString("o"); // 将 startTime 转换为 ISO 8601 格式的字符串
-                DateTimeOffset startTimeOffset = DateTimeOffset.ParseExact(startTimeString, "o", CultureInfo.InvariantCulture);
-                broadcast.Snippet.ScheduledStartTimeDateTimeOffset = startTimeOffset;
-
-                DateTime endTime = end;
-                string endTimeString = endTime.ToString("o"); // 将 startTime 转换为 ISO 8601 格式的字符串
-                DateTimeOffset endTimeOffset = DateTimeOffset.ParseExact(endTimeString, "o", CultureInfo.InvariantCulture);
-                broadcast.Snippet.ScheduledEndTimeDateTimeOffset = endTimeOffset;
-
-
-
-                // 執行更新操作
-                LiveBroadcast updatedBroadcast = youtubeService.LiveBroadcasts.Update(broadcast, "snippet,status").Execute();
-                // 獲得直播ID
-                string broadcastId = updatedBroadcast.Id;
-                if (broadcastId != null)
-                {
-                    return broadcastId;
-                }
-                else { return "error"; }
-
-            }
-            catch
-            {
-                // 異常處理
-                return "error";
-            }
-        }
-
-
-
-
-
-
-
-
-
     }
 }
