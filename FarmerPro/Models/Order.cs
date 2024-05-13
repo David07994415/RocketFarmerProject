@@ -77,18 +77,10 @@ namespace FarmerPro.Models
         [Display(Name = "建立時間")]
         public DateTime CreatTime { get; set; } = DateTime.Now;
 
-
-
-        [Display(Name = "使用者Id")]  // 先不要設定為外鍵
+        [Display(Name = "使用者Id")] 
         public int UserId { get; set; }
-        //[JsonIgnore]//不會產生無限迴圈
-        //[ForeignKey("UserId")]
-        //[Display(Name = "使用者表單")]
-        //public virtual User User { get; set; }//virtual=虛擬資料，會跟資料庫的對應資料相對應
-
 
         [Display(Name = "訂單明細")]
         public virtual ICollection<OrderDetail> OrderDetail { get; set; }
-
     }
 }

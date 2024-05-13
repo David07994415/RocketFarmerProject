@@ -35,7 +35,6 @@ namespace FarmerPro.Controllers
         {
             try
             {
-                //取得使用者ID
                 int CustomerId = Convert.ToInt16(JwtAuthFilter.GetToken(Request.Headers.Authorization.Parameter)["Id"]);
                 if (!ModelState.IsValid)
                 {
@@ -52,13 +51,13 @@ namespace FarmerPro.Controllers
                     var newOrder = new Order
                     {
                         Receiver = input.receiver,
-                        Phone = input.phone,           //這個model要改名稱=>Done
+                        Phone = input.phone,          
                         City = input.city,
-                        District = input.district,          //信任前端資料，未來可以調整
-                        ZipCode = input.zipCode,    //信任前端資料，未來可以調整
+                        District = input.district,         
+                        ZipCode = input.zipCode,   
                         Address = input.address,
-                        DeliveryFee = 100,                    //前端是否要傳?
-                        OrderSum = input.orderSum,   //這邊為包含運費的總價
+                        DeliveryFee = 100,                    
+                        OrderSum = input.orderSum, 
                         Shipment = false,
                         Guid = Guid.NewGuid(),
                         UserId = CustomerId,
@@ -79,7 +78,6 @@ namespace FarmerPro.Controllers
                     db.OrderDetails.AddRange(newOrderDetail);
                     db.SaveChanges();
 
-                    //寫入OrderFarmer資料庫
                     var uniqueProductIds = input.cartList.Select(item => item.productId).Distinct().ToList();
                     List<int> uniqueFarmer = new List<int>();
                     foreach (var product in uniqueProductIds)
@@ -104,17 +102,13 @@ namespace FarmerPro.Controllers
 
                         if (specToUpdate != null)
                         {
-                            specToUpdate.Stock -= cartItem.qty;   //庫存減少
-                            specToUpdate.Sales += cartItem.qty;   //銷貨增加
+                            specToUpdate.Stock -= cartItem.qty;   // 庫存減少
+                            specToUpdate.Sales += cartItem.qty;   // 銷貨增加
                             db.SaveChanges();
                         }
                     }
 
-                    //以上為訂單存入資料庫
                     //以下為藍新資料建立
-
-                    // 整理金流串接資料
-                    // 加密用金鑰
                     string hashKey = WebConfigurationManager.AppSettings["BlueKey"];
                     string hashIV = WebConfigurationManager.AppSettings["BlueIV"];
 
@@ -122,7 +116,7 @@ namespace FarmerPro.Controllers
                     string merchantID = "MS151432737";
                     string tradeInfo = "";
                     string tradeSha = "";
-                    string version = "2.0"; // 參考文件串接程式版本  //不確定，先設定2.0
+                    string version = "2.0"; // 參考文件串接程式版本
 
                     // tradeInfo 內容，導回的網址都需為 https
                     string respondType = "JSON"; // 回傳格式
@@ -133,7 +127,7 @@ namespace FarmerPro.Controllers
                     string tradeLimit = "600"; // 交易限制秒數
                     string notifyURL = @"http://" + Request.RequestUri.Host + "/api/order/payment"; //變成HTTP //"NotifyURL"; // NotifyURL 填後端接收藍新付款結果的 API 位置，如 : /api/users/getpaymentdata
                     string returnURL = @"https://sun-live.vercel.app/api/payment/return";//"付款完成導回頁面網址" + "/" + "訂單ID";  // 前端可用 Status: SUCCESS 來判斷付款成功，網址夾帶可拿來取得活動內容
-                    string email = @"14rocketback@gmail.com";//"消費者信箱"; // 通知付款完成用
+                    string email = @"14rocketback@gmail.com";  //"消費者信箱"; // 通知付款完成用
                     string loginType = "0"; // 0不須登入藍新金流會員
 
                     // 將 model 轉換為List<KeyValuePair<string, string>>
@@ -160,7 +154,6 @@ namespace FarmerPro.Controllers
                     tradeSha = CryptoUtil.EncryptSHA256($"HashKey={hashKey}&{tradeInfo}&HashIV={hashIV}");
 
                     //將藍新資料送入資料庫
-
                     var updateBlueNewData = db.Orders.Where(x => x.Id == OrderID)?.FirstOrDefault();
                     if (updateBlueNewData != null)
                     {
@@ -202,7 +195,6 @@ namespace FarmerPro.Controllers
         #endregion FCO-01 新增訂單(未付款)(包含藍新資料)
 
         #region FCO-02 藍新回送付款狀態(金流已付款)
-
         /// <summary>
         /// FCO-02 藍新回送付款狀態(金流已付款)
         /// </summary>
@@ -215,7 +207,6 @@ namespace FarmerPro.Controllers
             try
             {
                 // 付款失敗跳離執行
-                //var response = Request.CreateResponse(HttpStatusCode.OK);
                 if (!data.Status.Equals("SUCCESS"))
                 {
                     var result2 = new
@@ -228,7 +219,6 @@ namespace FarmerPro.Controllers
                 }
                 else
                 {
-                    // 加密用金鑰
                     string hashKey = WebConfigurationManager.AppSettings["BlueKey"];
                     string hashIV = WebConfigurationManager.AppSettings["BlueIV"];
                     // AES 解密
@@ -246,9 +236,8 @@ namespace FarmerPro.Controllers
                         changePayState.IsPay = true;
                         db.SaveChanges();
                     }
-                    //藍新交易紀錄目前沒有存在資料庫內，後續可以考慮新增
 
-                    //修改購物車變成IsPay，以利於清空
+                    //修改購物車變成IsPay狀態，以利於清空
                     var changeCartPayState = db.Carts.Where(x => x.Id == cartId && x.IsPay == false)?.FirstOrDefault();
                     if (changeCartPayState != null)
                     {
@@ -276,7 +265,6 @@ namespace FarmerPro.Controllers
                 return Content(HttpStatusCode.OK, result);
             }
         }
-
         #endregion FCO-02 藍新回送付款狀態(金流已付款)
     }
 }

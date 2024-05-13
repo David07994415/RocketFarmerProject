@@ -27,6 +27,7 @@ namespace FarmerPro.Models
 
         [Display(Name = "SpecId")]
         public int SpecId { get; set; }
+
         [JsonIgnore]
         [ForeignKey("SpecId")]
         [Display(Name = "Spec表單")]
@@ -34,11 +35,10 @@ namespace FarmerPro.Models
 
         [Display(Name = "OrderId")]
         public int OrderId { get; set; }
+
         [JsonIgnore]
         [ForeignKey("OrderId")]
         [Display(Name = "訂單表單")]
         public virtual Order Order { get; set; }
-
-
     }
 }
