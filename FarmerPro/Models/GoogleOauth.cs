@@ -20,68 +20,37 @@ namespace FarmerPro.Models
     public class GoogleOauth
     {
         private FarmerProDB db = new FarmerProDB();
-        // https://developers.google.com/identity/protocols/oauth2/scopes?hl=zh-tw#people
-
-        public static PeopleServiceService GetPeopleService()
-        {
-
-            string[] scopes = { "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile" };
-            UserCredential credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
-                new ClientSecrets
-                {
-                    ClientId = WebConfigurationManager.AppSettings["ytid"].ToString(),
-                    ClientSecret = WebConfigurationManager.AppSettings["ytkey"].ToString(),
-                },
-                scopes,
-                "user",
-                System.Threading.CancellationToken.None
-                ).Result;
-
-            // 創建 PeopleService
-            var PeopleServiceObj = new PeopleServiceService(new BaseClientService.Initializer()
-            {
-                HttpClientInitializer = credential,
-                ApplicationName = "Google People Infor APIs"
-            });
-
-            return PeopleServiceObj;
-        }
 
         public List<string> RetrieveUserInfor(UserCredential credential)
         {
             try
             {
-                //tokenResponse.Scope= 從這裡開始
-                // 創建 YouTubeService
+                // 創建 PeopleService
                 var PeopleService = new PeopleServiceService(new BaseClientService.Initializer()
                 {
                     HttpClientInitializer = credential,
                     ApplicationName = "user"
                 });
 
-                GetRequest peopleRequest =PeopleService.People.Get("people/me");
+                GetRequest peopleRequest = PeopleService.People.Get("people/me");
                 peopleRequest.PersonFields = "names,emailAddresses";
                 Person me = peopleRequest.Execute();
-                //var PR = PeopleService.People.Get("people/me");
-                //PR.RequestMaskIncludeField = "person.names,person.emailAddresses";
-                //Person me = PR.Execute();
 
-                List<string> UserInforList=new List<string>();
-                if (me != null) 
+                List<string> UserInforList = new List<string>();
+                if (me != null)
                 {
-                    if (me.Names[0] != null) 
+                    if (me.Names[0] != null)
                     {
                         UserInforList.Add(me.Names[0].DisplayName);
                     }
-                    if (me.EmailAddresses[0] != null) 
+                    if (me.EmailAddresses[0] != null)
                     {
                         UserInforList.Add(me.EmailAddresses[0].Value);
                     }
                 }
-
                 return UserInforList;
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 List<string> catcherror = new List<string>
                 {
@@ -91,42 +60,11 @@ namespace FarmerPro.Models
             }
         }
 
-        public UserCredential CreateToken(string tokeninput)
+        public User CheckUser(string account)
         {
-            TokenResponse token = new TokenResponse();
-            token.AccessToken = tokeninput;
-            token.Scope = @"https://www.googleapis.com/auth/userinfo.profile";
-            //https://www.googleapis.com/auth/userinfo.email%20
-            token.ExpiresInSeconds = 3584;
-            token.Issued = DateTime.Now;
-            token.IssuedUtc = DateTime.UtcNow;
-
-
-            var clientSecrets = new ClientSecrets
-            {
-                ClientId = WebConfigurationManager.AppSettings["ytid"].ToString(),
-                ClientSecret = WebConfigurationManager.AppSettings["ytkey"].ToString()
-            };
-
-
-            // 建立授權資料流
-            var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
-            {
-                ClientSecrets = clientSecrets
-            });
-
-            // 将 TokenResponse 转换为 UserCredential
-            var credential = new UserCredential(flow, "user", token);
-            return credential;
-        }
-
-        public User CheckUser(string account) 
-        {
-            var IsRegister = db.Users.Where(x=> x.Account == account)?.FirstOrDefault();
+            var IsRegister = db.Users.Where(x => x.Account == account)?.FirstOrDefault();
             return IsRegister;
         }
-
-        
 
     }
 }
