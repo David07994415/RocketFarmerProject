@@ -110,11 +110,11 @@
   
   - 雲端服務：Azure 上建立虛擬機(VM)，並於 VM 上建立 SQL Server 與 IIS 環境，部屬 Web API Application
 
-  - 即時通訊：透過 SignalR 建立後端 Hub，完成與前端(Client-Side)的 1-1 與 1-多的即時通訊功能
+  - 即時通訊：透過 SignalR 建立後端 Hub，完成與前端(Client-Side)的 1-1 與 1-多 的即時通訊功能
   
   - 線上串流：介接 Youtube Api，達成個人直播串流服務
  
-  - 登入服務：多元登入服務，包含信件無密碼登入、OAuth2.0 Google 第三方登入以及 Passkey 非對稱加密登入
+  - 登入服務：建立包含無密碼信件登入、OAuth2.0 Google 第三方登入以及 Passkey 非對稱加密登入
 
 * 後端協作 Git 規範：
   * Commit
@@ -131,12 +131,14 @@
 
     | 類型 | 格式 |
     | :---: | :---: |
-    | 開發功能 | Dev |
+    | 開發功能 | dev |
     | 新增功能 | Feature-[branch name] |
     | 更新功能 | Update-[branch name] |
 
 
   * Git Flow
+
+    <img src="https://raw.githubusercontent.com/David07994415/RocketFarmerProject/main/gitflowchar.png">
 
 * 後端專案結構：
 ```
