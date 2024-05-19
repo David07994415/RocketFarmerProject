@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://sun-live.vercel.app">
-    <img width="1200" height="800" src ="https://github.com/JHANGMING/SunLive/blob/main/public/images/cover.png">
+    <img width="1200" src ="https://github.com/JHANGMING/SunLive/blob/main/public/images/cover.png">
   </a>
 </p>
  
